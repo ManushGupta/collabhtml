@@ -1,9 +1,21 @@
 {
   "name": "collabhtml",
   "version": "0.1.0",
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "CollabHTML: a collaboration layer over HTML. Comment threads with pluggable storage and optional HTML export.",
   "main": "src/comments.js",
+  "files": [
+    "src/",
+    "ui/",
+    "dist/",
+    "examples/",
+    "scripts/",
+    "tests/",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "build": "node scripts/build.js",
     "test": "node --test tests/*.test.js",
