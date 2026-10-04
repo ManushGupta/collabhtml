@@ -132,3 +132,40 @@ test('reopen flips a resolved thread back to open', () => {
   assert.equal(state.threads[0].status, 'open');
   assert.equal(state.threads[0].statusChange.personName, 'Priya');
 });
+
+test('skill prints the bundled skill file', () => {
+  const { dir } = sandbox();
+  const result = run(['skill'], dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /name: collabhtml-review/);
+  assert.match(result.stdout, /collabhtml extract/);
+});
+
+test('skill --out writes the file', () => {
+  const { dir } = sandbox();
+  const out = path.join(dir, 'SKILL.md');
+  const result = run(['skill', '--out', out], dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(fs.readFileSync(out, 'utf8'), /name: collabhtml-review/);
+});
+
+test('thread starts a new anchored thread and prints its id', () => {
+  const { dir } = sandbox();
+  const file = reviewFile(dir);
+  const result = run(['thread', file, '--exact', 'Hello world.', '--name', 'Agent', '--text', 'Flagging this.'], dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Created thread \S+\./);
+  const state = extractState(fs.readFileSync(file, 'utf8'));
+  assert.equal(state.threads.length, 2);
+  const added = state.threads[1];
+  assert.equal(added.anchor[0].exact, 'Hello world.');
+  assert.equal(state.comments.at(-1).text, 'Flagging this.');
+});
+
+test('thread warns when the quote is absent from the file', () => {
+  const { dir } = sandbox();
+  const file = reviewFile(dir);
+  const result = run(['thread', file, '--exact', 'no such text', '--name', 'Agent', '--text', 'x'], dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /Unplaced/);
+});

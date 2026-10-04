@@ -8,7 +8,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { apply, createId, serialize } from '../src/comments.js';
+import { apply, createId, serialize, startThread } from '../src/comments.js';
+import type { Anchor } from '../src/comments.js';
 import { embedState, extractState, toMarkdown } from '../src/brief.js';
 
 const args = process.argv.slice(2);
@@ -43,6 +44,13 @@ Agent loop (human reviews in, agent work out, resolution back in):
   collabhtml extract report.collab.html --format markdown
   collabhtml reply report.collab.html --thread t1 --name "Agent" --text "Fixed in revision 2."
   collabhtml resolve report.collab.html --thread t1 --name "Agent" --text "Verified and resolved."
+  collabhtml thread report.collab.html --exact "needs work" --name "Agent" --text "Flagging this."
+
+Agent skill (teach any compatible agent the loop above):
+  collabhtml skill                 # print the skill file
+  collabhtml skill --out ./SKILL.md
+  npx skills add ManushGupta/collabhtml --skill collabhtml-review       # project-local install
+  npx skills add ManushGupta/collabhtml --skill collabhtml-review -g    # global install
 `);
 }
 
@@ -190,6 +198,57 @@ function runSetStatus(inputPath: string, status: 'open' | 'resolved'): void {
   writeState(inputPath, embedState(html, next), args.indexOf('--out'));
 }
 
+function runSkill(): void {
+  const root = path.resolve(scriptDir(), '..');
+  const text = fs.readFileSync(path.join(root, 'dist', 'skill.md'), 'utf8');
+  const out = flag('--out');
+  if (out) {
+    fs.writeFileSync(out, text);
+    console.log(`Wrote skill to ${out}`);
+    return;
+  }
+  console.log(text);
+}
+
+function runThread(inputPath: string): void {
+  const exact = flag('--exact');
+  const text = flag('--text');
+  if (!exact || !text) {
+    console.error('Error: --exact and --text are required.');
+    process.exit(1);
+  }
+  const { html, state } = readState(inputPath);
+  const actor = actorInput();
+  const threadId = flag('--thread-id') || createId();
+  const anchor: Anchor = [
+    {
+      type: 'TextQuoteSelector',
+      exact,
+      ...(flag('--prefix') ? { prefix: flag('--prefix') } : {}),
+      ...(flag('--suffix') ? { suffix: flag('--suffix') } : {})
+    }
+  ];
+  const start = flag('--start');
+  const end = flag('--end');
+  if (start !== undefined || end !== undefined) {
+    const startNum = Number(start);
+    const endNum = Number(end);
+    if (!Number.isSafeInteger(startNum) || !Number.isSafeInteger(endNum)) {
+      console.error('Error: --start and --end must both be integers.');
+      process.exit(1);
+    }
+    anchor.push({ type: 'TextPositionSelector', start: startNum, end: endNum });
+  }
+  if (!html.includes(exact)) {
+    console.error(`Warning: quoted text not found in ${inputPath}; the thread will show as Unplaced.`);
+  }
+  const next = startThread(state, {
+    threadId, anchor, commentId: createId(), ...actor, text
+  });
+  writeState(inputPath, embedState(html, next), args.indexOf('--out'));
+  console.log(`Created thread ${threadId}.`);
+}
+
 function main(): void {
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     showHelp();
@@ -207,6 +266,8 @@ function main(): void {
   if (first === 'reply' && second) return runReply(second);
   if (first === 'resolve' && second) return runResolve(second);
   if (first === 'reopen' && second) return runReopen(second);
+  if (first === 'thread' && second) return runThread(second);
+  if (first === 'skill') return runSkill();
 
   const inputPath = args.find(arg => !arg.startsWith('-'));
   if (!inputPath) {

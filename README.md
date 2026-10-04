@@ -16,15 +16,29 @@ This creates `report.collab.html` — a self-contained file with the comment lay
 
 ### Agent loop (humans review, agents resolve)
 
-The same files work for agents, in both directions:
+The same files work for agents, in both directions. The loop: a human comments in the browser, the agent pulls the reviews, does the work, and writes the resolution back into the file — reopening threads that need another look works the same way. It also runs in reverse: the agent starts threads with questions, and reads the human's answers back on the next `extract` (nothing notifies either side — re-check when you need fresh answers):
 
 ```bash
 collabhtml extract report.collab.html --format markdown   # reviews out (or --format json)
 collabhtml reply report.collab.html --thread t1 --name "Agent" --text "Fixed in revision 2."
 collabhtml resolve report.collab.html --thread t1 --name "Agent" --text "Verified and resolved."
+collabhtml reopen report.collab.html --thread t1 --name "Agent" --text "One more check needed."
+collabhtml thread report.collab.html --exact "needs work" --name "Agent" --text "What should this be?"
 ```
 
-`extract` renders threads, quotes, anchor offsets, and authorship as Markdown (or raw JSON) — readable by humans, parseable by agents. `reply` and `resolve` write back through the same operation protocol the UI uses, so the resolution and its paper trail land in the file attributed to the agent.
+`extract` renders threads, quotes, anchor offsets, and authorship as Markdown (or raw JSON) — readable by humans, parseable by agents. `reply`, `resolve`, and `reopen` write back through the same operation protocol the UI uses, so every step lands in the file with its author and timestamp. Agent identity is stable per name (`agent:<name>` unless `--id` is given), so follow-ups across runs belong to the same person. Agents can also start threads directly with `thread --exact "quoted text" --text "..."`.
+
+## For agents: install the skill
+
+```bash
+# Project-local (adds to .claude/skills, .agents/skills, etc.)
+npx skills add ManushGupta/collabhtml --skill collabhtml-review
+
+# Global
+npx skills add ManushGupta/collabhtml --skill collabhtml-review -g
+```
+
+See the full skill at [`skills/collabhtml-review/SKILL.md`](skills/collabhtml-review/SKILL.md).
 
 ### 2. As a library (for developers)
 

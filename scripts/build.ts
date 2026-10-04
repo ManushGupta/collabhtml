@@ -49,6 +49,7 @@ fs.chmodSync(path.join(dist, 'cli.cjs'), 0o755);
 const full = read('dist/collabhtml-full.js');
 const bootstrap = read('examples/standalone/bootstrap.js');
 fs.copyFileSync(path.join(root, 'examples/standalone/bootstrap.js'), path.join(dist, 'bootstrap.js'));
+fs.copyFileSync(path.join(root, 'skills/collabhtml-review/SKILL.md'), path.join(dist, 'skill.md'));
 const demo = read('examples/standalone/index.html');
 fs.writeFileSync(path.join(dist, 'demo.html'), demo.replace('<!-- COLLABHTML_RUNTIME -->',
   `<script data-collabhtml-runtime data-root="#report" data-document="collabhtml-demo" data-revision="1">${escapeScript(full)}</script>`)
