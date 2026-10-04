@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- Responsibility: viewer-example upload controls and isolated artifact iframe. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CollabHTML · Host viewer example</title>
+  <style>
+    * { box-sizing:border-box; } body { margin:0; background:#f1f5f9; color:#172333; font:14px/1.5 system-ui,sans-serif; }
+    header { padding:18px 24px; background:white; border-bottom:1px solid #cbd5e1; }
+    h1 { margin:0; font-size:22px; } p { margin:6px 0; color:#526176; }
+    .controls { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-top:12px; }
+    button,input { font:inherit; } button { padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; background:white; cursor:pointer; }
+    input[type=text] { padding:8px; border:1px solid #cbd5e1; border-radius:8px; } #status { min-height:21px; }
+    iframe { width:100%; height:calc(100vh - 220px); min-height:450px; border:0; background:white; }
+    .error { color:#a32121; }
+  </style>
+  <script src="../../src/comments.js" defer></script>
+  <script src="storage.js" defer></script>
+  <script src="viewer.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>CollabHTML / host viewer example</h1>
+    <p>Upload HTML. This viewer adds comments automatically. Each comment operation is sent to the example server and stored in JSON files.</p>
+    <div class="controls">
+      <label>Your name <input id="person-name" type="text" value="Demo person" maxlength="200"></label>
+      <label>HTML file <input id="upload" type="file" accept=".html,.htm,text/html"></label>
+      <button id="sample" type="button">Open sample HTML</button>
+      <label><input id="allow-scripts" type="checkbox"> Allow document scripts (trusted HTML only)</label>
+    </div>
+    <p id="status" role="status" aria-live="polite">Example only: a loopback file-storage backend with no login or encryption. Serve through npm run dev.</p>
+  </header>
+  <iframe id="artifact" title="HTML document with comments" sandbox="allow-scripts allow-forms allow-downloads" allow="clipboard-write" referrerpolicy="no-referrer"></iframe>
+</body>
+</html>

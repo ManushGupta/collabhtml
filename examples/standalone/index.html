@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- Responsibility: standalone sample content. Build inserts library and example startup. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CollabHTML · Make any HTML collaborative</title>
+  <style>
+    * { box-sizing:border-box; } body { margin:0; background:#f1f5f9; color:#172333; font:17px/1.7 system-ui,sans-serif; }
+    main { max-width:850px; margin:64px auto; padding:48px; background:white; border:1px solid #dbe3ed; border-radius:20px; }
+    .eyebrow { color:#2458c6; font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+    h1 { font-size:44px; line-height:1.2; letter-spacing:-.03em; } h2 { font-size:24px; }
+    .lede { font-size:20px; color:#526176; } .callout { background:#eaf1ff; padding:20px; border-radius:12px; }
+    table { width:100%; border-collapse:collapse; } th,td { padding:12px; text-align:left; border-bottom:1px solid #dbe3ed; }
+    code { background:#f1f5f9; padding:2px 5px; border-radius:4px; } footer { font-size:13px; color:#526176; margin-top:32px; }
+    @media(min-width:1250px) { main { margin-left:calc((100vw - 1250px)/2); } }
+    @media(max-width:700px) { main { margin:80px 12px 24px; padding:24px; } h1 { font-size:32px; } }
+  </style>
+</head>
+<body>
+  <main id="report">
+    <div class="eyebrow">CollabHTML / a collaboration layer over HTML</div>
+    <h1>Make any HTML collaborative.</h1>
+    <p class="lede">A document can be more than a final answer. It can be a place to ask questions, check evidence, and improve an idea together.</p>
+    <div class="callout"><strong>Try it:</strong> enter your name in the Comments pane. Select a sentence here, then add a comment. Reply, resolve, and save an HTML copy with comments. Open that copy offline: your comments travel with it.</div>
+    <h2>A report worth discussing</h2>
+    <p id="sample-paragraph">This quarter, the team reduced report preparation time by <strong>32 percent</strong>. We should validate this result against the previous quarter before publishing it.</p>
+    <p>Our next step is to keep discussion inside the document, not in a separate chain of messages. Authors keep control of the content. Everyone keeps their comments next to the relevant text.</p>
+    <table>
+      <thead><tr><th>Capability</th><th>Standalone HTML</th><th>Hosted viewer</th></tr></thead>
+      <tbody><tr><td>Comment threads and follow-ups</td><td>Yes</td><td>Yes</td></tr><tr><td>Save and share</td><td>HTML copy with comments</td><td>Host storage</td></tr><tr><td>Trusted identity</td><td>No; names are editable</td><td>Host authentication</td></tr></tbody>
+    </table>
+    <h2>Three parts, two ways to use them</h2>
+    <p>The CollabHTML primitive owns the comment data and the text anchors. It has no screen of its own. An optional default UI draws the Comments pane you see here, and you can replace it with your own. The host owns identity, permissions, encryption, and shared storage.</p>
+    <p>Standalone: the saved file carries the comments, so no server is needed. Hosted: a viewer service stores them. Both use the same comment format.</p>
+    <footer>Prototype · Comments on static HTML. Comments stay in memory until you save a copy. This demo has no backend, analytics, or external assets.</footer>
+  </main>
+  <!-- COLLABHTML_RUNTIME -->
+  <!-- COLLABHTML_BOOTSTRAP -->
+</body>
+</html>
