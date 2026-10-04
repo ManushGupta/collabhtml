@@ -1,9 +1,9 @@
 // Responsibility: Comment API tests — threads, follow-ups, operations, validation, serialization.
 'use strict';
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const C = require('../src/comments.js');
-const A = require('../src/anchors.js');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import * as C from '../src/comments.js';
+import * as A from '../src/anchors.js';
 const timestamp = '2026-10-03T10:00:00.000Z';
 const anchor = A.create('The report says revenue increased 12 percent this quarter.', 16, 43);
 const manu = { personId: 'person-1', personName: 'Manu' };

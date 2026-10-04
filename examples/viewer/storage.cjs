@@ -2,7 +2,7 @@
 // No pane, iframe handling, or file writes. HTTP delegates to the example server.
 (function (global) {
   'use strict';
-  const C = typeof module !== 'undefined' && module.exports ? require('../../src/comments.js') : global.CollabHTMLComments;
+  const C = typeof module !== 'undefined' && module.exports ? require('../../dist/comments.cjs') : global.CollabHTMLComments;
   const sameDocument = (a, b) => a && b && a.id === b.id && a.revision === b.revision;
   const key = document => JSON.stringify([document.id, document.revision]);
   function ensureDocument(state, document) {

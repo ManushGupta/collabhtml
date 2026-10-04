@@ -1,10 +1,10 @@
 // Responsibility: example-server comment files — load state, apply one operation, write atomically.
 // No HTTP or UI. Single-process writes only; not production shared storage.
 'use strict';
-const fs = require('node:fs');
-const path = require('node:path');
-const { createHash, randomUUID } = require('node:crypto');
-const C = require('../../src/comments.js');
+import fs from 'node:fs';
+import path from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
+import * as C from '../../src/comments.js';
 
 function createFileStore(directory, maxBytes = 2 * 1024 * 1024) {
   function filename(document) {
@@ -40,4 +40,4 @@ function createFileStore(directory, maxBytes = 2 * 1024 * 1024) {
   }
   return { load, apply };
 }
-module.exports = { createFileStore };
+export { createFileStore };

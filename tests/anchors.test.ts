@@ -1,9 +1,9 @@
 // Responsibility: W3C-selector anchors — creation, relocation, and ambiguous or changed text.
 'use strict';
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const A = require('../src/anchors.js');
-const C = require('../src/comments.js');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import * as A from '../src/anchors.js';
+import * as C from '../src/comments.js';
 const sample = 'The report says revenue increased 12 percent this quarter.';
 const anchor = A.create(sample, 16, 44);
 

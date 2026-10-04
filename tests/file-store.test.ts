@@ -1,14 +1,15 @@
 // Responsibility: example-server file durability, operation API, and origin-check tests.
 'use strict';
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { createFileStore } = require('../examples/viewer/file-store.js');
-const { createServer } = require('../examples/viewer/server.js');
-const { createStore, httpAdapter } = require('../examples/viewer/storage.js');
-const A = require('../src/anchors.js');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { createFileStore } from '../examples/viewer/file-store.js';
+import { createServer } from '../examples/viewer/server.js';
+import storageApi from '../examples/viewer/storage.cjs';
+const { createStore, httpAdapter } = storageApi;
+import * as A from '../src/anchors.js';
 const identity = { id: '../../report', revision: '1' };
 const timestamp = '2026-10-03T10:00:00.000Z';
 const start = (threadId, commentId) => ({

@@ -1,12 +1,19 @@
-#!/usr/bin/env node
-'use strict';
-
-const fs = require('node:fs');
-const path = require('node:path');
+// Responsibility: CLI — turn any HTML file into a self-contained commentable copy.
+// Usage: collabhtml <input.html> [--out <output.collab.html>]
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const args = process.argv.slice(2);
 
-function showHelp() {
+// Works both bundled as CJS (dist/cli.cjs, where import.meta is gone)
+// and run from source via tsx.
+function scriptDir(): string {
+  if (typeof __filename !== 'undefined') return path.dirname(__filename);
+  return path.dirname(fileURLToPath(import.meta.url));
+}
+
+function showHelp(): void {
   console.log(`
 CollabHTML CLI — Make any HTML file commentable
 
@@ -27,21 +34,16 @@ Examples:
 `);
 }
 
-function getVersion() {
+function getVersion(): string {
   try {
-    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    const pkg = JSON.parse(fs.readFileSync(path.join(scriptDir(), '..', 'package.json'), 'utf8'));
     return pkg.version;
   } catch {
     return 'unknown';
   }
 }
 
-/**
- * @param {string} inputPath
- * @param {string} outputPath
- * @returns {void}
- */
-function wrap(inputPath, outputPath) {
+function wrap(inputPath: string, outputPath: string): void {
   if (!fs.existsSync(inputPath)) {
     console.error(`Error: File not found: ${inputPath}`);
     process.exit(1);
@@ -49,31 +51,21 @@ function wrap(inputPath, outputPath) {
 
   const input = fs.readFileSync(inputPath, 'utf8');
 
-  // Build the runtime and bootstrap code
-  const root = path.resolve(__dirname, '..');
-  /**
-   * @param {string} file
-   * @returns {string}
-   */
-  const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+  // The bundled runtime lives in dist/ after `npm run build`.
+  const root = path.resolve(scriptDir(), '..');
+  const dist = path.join(root, 'dist');
+  const read = (file: string): string => fs.readFileSync(path.join(dist, file), 'utf8');
 
-  const primitive = ['src/comments.js', 'src/anchors.js', 'src/controller.js'].map(read).join('\n');
-  const pane = ['ui/threads.js', 'ui/pane.js'].map(read).join('\n');
-  const exporter = read('src/export-html.js');
-  const full = [primitive, pane, exporter].join('\n');
-  const bootstrap = read('examples/standalone/bootstrap.js');
+  const full = read('collabhtml-full.js');
+  const bootstrap = read('bootstrap.js');
 
-  /**
-   * @param {string} source
-   * @returns {string}
-   */
-  const escapeScript = source => source.replace(/<\/script/gi, '<\\/script');
+  const escapeScript = (source: string): string => source.replace(/<\/script/gi, '<\\/script');
 
   // Replace placeholders or inject before </body>
   const runtimeScript = `<script data-collabhtml-runtime data-root="main" data-document="${path.basename(inputPath, '.html')}" data-revision="1">${escapeScript(full)}</script>`;
   const bootstrapScript = `<script data-collabhtml-bootstrap>${escapeScript(bootstrap)}</script>`;
 
-  let output;
+  let output: string;
   if (input.includes('<!-- COLLABHTML_RUNTIME -->')) {
     output = input
       .replace('<!-- COLLABHTML_RUNTIME -->', runtimeScript)
@@ -89,7 +81,7 @@ function wrap(inputPath, outputPath) {
   console.log(`Open ${outputPath} in your browser to start commenting.`);
 }
 
-function main() {
+function main(): void {
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     showHelp();
     return;
@@ -108,7 +100,7 @@ function main() {
     process.exit(1);
   }
 
-  let outputPath = null;
+  let outputPath: string | null = null;
   const outIndex = args.indexOf('--out');
   if (outIndex !== -1 && args[outIndex + 1]) {
     outputPath = args[outIndex + 1];

@@ -3,11 +3,12 @@
 //   GET  /api/comments?document=ID&revision=REV  -> comments state
 //   POST /api/comments { document, operation }    -> comments state after the operation
 'use strict';
-const http = require('node:http');
-const fs = require('node:fs');
-const path = require('node:path');
-const { createFileStore } = require('./file-store.js');
-const root = path.resolve(__dirname, '../..');
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createFileStore } from './file-store.js';
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const port = Number(process.env.PORT || 4173);
 function createServer({ storageDirectory = path.join(root, '.collabhtml-data', 'comments-v3') } = {}) {
   const store = createFileStore(storageDirectory);
@@ -56,10 +57,10 @@ function createServer({ storageDirectory = path.join(root, '.collabhtml-data', '
     if (!file.startsWith(`${root}${path.sep}`) || /(^|\/)\./.test(pathname)) { response.writeHead(403).end(); return; }
     fs.readFile(file, (error, data) => {
       if (error) { response.writeHead(404).end('Not found. Run npm run build first.'); return; }
-      response.writeHead(200, { 'Content-Type': file.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      response.writeHead(200, { 'Content-Type': file.endsWith('.js') || file.endsWith('.cjs') ? 'text/javascript; charset=utf-8' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       response.end(data);
     });
   });
 }
-if (require.main === module) createServer().listen(port, '127.0.0.1', () => console.log(`CollabHTML demo: http://127.0.0.1:${port}`));
-module.exports = { createServer };
+if (process.argv[1] === fileURLToPath(import.meta.url)) createServer().listen(port, '127.0.0.1', () => console.log(`CollabHTML demo: http://127.0.0.1:${port}`));
+export { createServer };

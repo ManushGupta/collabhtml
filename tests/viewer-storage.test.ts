@@ -1,10 +1,10 @@
 // Responsibility: example-host storage contract tests — load and apply through any adapter.
 'use strict';
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const C = require('../src/comments.js');
-const A = require('../src/anchors.js');
-const S = require('../examples/viewer/storage.js');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import * as C from '../src/comments.js';
+import * as A from '../src/anchors.js';
+import S from '../examples/viewer/storage.cjs';
 const document = { id: 'report-1', revision: '2' };
 const timestamp = '2026-10-03T10:00:00.000Z';
 const start = (threadId, commentId, personName) => ({

@@ -1,13 +1,13 @@
 // Responsibility: CLI tests — wrap makes a self-contained commentable copy.
 'use strict';
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const { spawnSync } = require('node:child_process');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
-const cli = path.join(__dirname, '..', 'scripts', 'cli.js');
+const cli = path.join(import.meta.dirname, '..', 'dist', 'cli.cjs');
 const inputHtml = '<!doctype html><html><head><meta charset="utf-8"></head><body><main id="report"><p>Hello world.</p></main></body></html>';
 
 function sandbox() {
