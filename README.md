@@ -1,10 +1,22 @@
-# CollabHTML
+<h1 align="center">CollabHTML</h1>
 
-**A collaboration layer over HTML.**
+<p align="center">
+  <strong>A collaboration layer over HTML.</strong><br>
+  Comment threads on any static HTML — in a file, or through a service.
+</p>
 
-![CollabHTML demo: review an agent-written plan with comments, in a standalone file and in a hosted viewer](docs/collabhtml-demo.gif)
+<p align="center">
+  <a href="https://github.com/ManushGupta/collabhtml/actions"><img alt="CI" src="https://github.com/ManushGupta/collabhtml/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/ManushGupta/collabhtml/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+</p>
 
-[Watch the sharper MP4](docs/collabhtml-demo.mp4) · Try it: `npx collabhtml report.html`, open the `.collab.html` file, select text, and comment. No server, no account.
+<p align="center">
+  <img src="docs/collabhtml-demo.gif" alt="CollabHTML demo: review an agent-written plan with comments, in a standalone file and in a hosted viewer" width="780">
+</p>
+
+<p align="center">
+  <a href="docs/collabhtml-demo.mp4">Watch the sharper MP4</a> · Try it: <code>npx collabhtml report.html</code>, open the <code>.collab.html</code> file, select text, and comment. No server, no account.
+</p>
 
 ## Quick start
 
