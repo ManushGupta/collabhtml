@@ -6,6 +6,7 @@
     "access": "public"
   },
   "description": "CollabHTML: a collaboration layer over HTML. Comment threads with pluggable storage and optional HTML export.",
+  "license": "MIT",
   "main": "./dist/comments.js",
   "types": "./dist/types/src/comments.d.ts",
   "exports": {
@@ -45,7 +46,7 @@
     "prepack": "npm run build",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && tsx --test tests/*.test.ts",
-    "dev": "tsx examples/viewer/server.js"
+    "dev": "tsx examples/viewer/server.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

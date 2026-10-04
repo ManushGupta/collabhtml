@@ -42,6 +42,7 @@ export interface Controller {
   updateMetadata: (target: { threadId?: string; commentId?: string }, metadata: Record<string, any>) => Promise<ChangeResult>;
   reanchor: (threadId: string, anchor: Anchor) => Promise<ChangeResult>;
   focus: (threadId: string) => boolean;
+  getRoot: () => Element;
   on: (type: string, handler: ListenerFn) => () => void;
   destroy: () => void;
 }
@@ -178,6 +179,8 @@ export function create(options: ControllerOptions = {}): Controller {
       emit('focus', threadId);
       return true;
     },
+    // The live root element, for UIs that need it (e.g. resolving anchors).
+    getRoot: () => root,
     // Returns a function that removes the handler.
     on(type: string, handler: ListenerFn): () => void {
       if (!listeners.has(type) || typeof handler !== 'function') throw new Error(`on(type, handler): type is one of ${EVENTS.join(', ')}`);

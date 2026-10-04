@@ -116,7 +116,7 @@
     const composeActions = document.createElement('div'); composeActions.className = 'actions';
     const submit = document.createElement('button'); submit.textContent = 'Add comment'; submit.className = 'btn primary'; submit.type = 'submit';
     const cancel = document.createElement('button'); cancel.textContent = 'Cancel'; cancel.className = 'btn'; cancel.type = 'button';
-    cancel.addEventListener('click', () => { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; });
+    cancel.addEventListener('click', () => { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; showDraft(null); });
     composeActions.append(submit, cancel); compose.append(quotePreview, commentInput, composeActions);
     const list = document.createElement('div'); body.append(compose, list);
     const footer = document.createElement('footer');
@@ -127,6 +127,17 @@
     document.body.append(host);
 
     let selectedAnchor = null;
+    // The pending selection stays visibly highlighted while composing, even
+    // though focus moves into the panel. Same highlight layer, own handle.
+    const Anchors = CollabHTML.anchors;
+    const draft = Anchors.highlight(document, `chv-draft-${CollabHTML.comments.createId()}`, '#b3d7ff');
+    const root = comments.getRoot();
+    function showDraft(anchor) {
+      if (!anchor) { draft.update([]); return; }
+      const index = Anchors.textIndex(root);
+      const range = Anchors.toRange(index, Anchors.locate(index.content, anchor));
+      draft.update(range ? [range] : []);
+    }
     const report = (message, error) => { status.textContent = message; status.className = error ? 'status error' : 'status'; };
     async function perform(task) {
       try { report('Updating comments…'); await task(); report('Comments updated.'); return true; }
@@ -267,16 +278,17 @@
       selectedAnchor = anchor;
       quotePreview.textContent = quoteTextOf(anchor);
       compose.hidden = false; setOpen(true);
+      showDraft(anchor);
     });
     comments.on('focus', threadId => {
-      const card = list.querySelector(`[data-thread-id="${threadId}"]`);
+      const card = list.querySelector(`[data-thread-id="${CSS.escape(threadId)}"]`);
       if (card) card.scrollIntoView({ block: 'nearest' });
     });
     compose.addEventListener('submit', async event => {
       event.preventDefault();
       if (!selectedAnchor) return;
       const done = await perform(() => comments.addThread({ anchor: selectedAnchor, text: commentInput.value.trim() }));
-      if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; }
+      if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; showDraft(null); }
     });
     filter.addEventListener('change', render);
     render();

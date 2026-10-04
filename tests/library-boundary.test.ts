@@ -18,7 +18,7 @@ test('the primitive has no UI, storage, export, network, or startup logic', () =
 
 test('the default UI calls only the primitive public API', () => {
   const publicMethods = new Set(['getState', 'setState', 'view', 'getPerson', 'setPerson', 'addThread', 'addComment', 'setStatus',
-    'toggleReaction', 'editComment', 'deleteComment', 'updateMetadata', 'reanchor', 'focus', 'on', 'destroy']);
+    'toggleReaction', 'editComment', 'deleteComment', 'updateMetadata', 'reanchor', 'getRoot', 'focus', 'on', 'destroy']);
   const source = ['ui/pane.ts', 'ui/threads.ts'].map(file => strip(read(file))).join('\n');
   // Method calls on the controller passed to mount(comments).
   const used = new Set([...source.matchAll(/(?<![.\w/'"])comments\.(\w+)/g)].map(match => match[1]));
@@ -33,6 +33,9 @@ test('the default UI calls only the primitive public API', () => {
   assert.deepEqual(commentImports.map(list => list.trim()), ['createId']);
   const threadImports = [...source.matchAll(/import \{([^}]*)\} from '\.\/threads\.js'/g)].map(match => match[1]);
   assert.deepEqual(threadImports.map(list => list.trim()), ['icon, renderThread']);
+  // ...plus the anchors module, only for highlighting pending selections.
+  const anchorImports = [...source.matchAll(/import \{([^}]*)\} from '\.\.\/src\/anchors\.js'/g)].map(match => match[1]);
+  assert.deepEqual(anchorImports.map(list => list.trim().split(/\s*,\s*/).sort()), [['highlight', 'locate', 'textIndex', 'toRange']]);
 });
 
 test('the primitive and the UI do not depend on HTML export, and export does not depend on the UI', () => {

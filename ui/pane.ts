@@ -3,6 +3,7 @@
 import { icon, renderThread } from './threads.js';
 import type { PaneAction, ThreadCtx, UiState } from './threads.js';
 import { createId } from '../src/comments.js';
+import { highlight, locate, textIndex, toRange } from '../src/anchors.js';
 import type { Anchor, Comment, TextQuoteSelector, Thread } from '../src/comments.js';
 import type { Controller } from '../src/controller.js';
 
@@ -118,6 +119,17 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
   const currentPersonId = (): string | null => comments.getPerson()?.personId ?? localPersonId;
   let busy = false; let destroyed = false;
   let selectedAnchor: Anchor | null = null;
+  // The pending selection stays visibly highlighted while composing, even
+  // though focus moves into the panel. Same highlight layer, own handle.
+  // Pending selections highlight blue (not yet a thread); placed threads stay yellow.
+  const draft = highlight(document, `collabhtml-draft-${createId()}`, '#b3d7ff');
+  const root = comments.getRoot();
+  function showDraft(anchor: Anchor | null): void {
+    if (!anchor) { draft.update([]); return; }
+    const index = textIndex(root);
+    const range = toRange(index, locate(index.content, anchor));
+    draft.update(range ? [range] : []);
+  }
 
   const ui: UiState = { editing: null, deleting: null, menu: null, picker: null, drafts: {} };
 
@@ -163,7 +175,7 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
   const commentInput = node('textarea'); commentInput.placeholder = 'Add a comment'; commentInput.setAttribute('aria-label', 'New comment'); commentInput.maxLength = 20000;
   const composeActions = node('div', undefined, 'actions');
   const submit = node('button', 'Add comment', 'btn primary'); submit.type = 'submit';
-  composeActions.append(submit, button('Cancel', () => { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; }, 'btn'));
+  composeActions.append(submit, button('Cancel', () => { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; showDraft(null); }, 'btn'));
   compose.append(quote, commentInput, composeActions);
   const list = node('div'); body.append(nameField, compose, list);
   const footer = node('footer'); footer.append(status); panel.append(header, body, footer); shadow.append(toggle, panel); document.body.append(host);
@@ -227,6 +239,7 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
   }
   function showSelection(anchor: Anchor): void {
     selectedAnchor = anchor; quote.textContent = quoteOf(anchor); compose.hidden = false; setOpen(true);
+    showDraft(anchor);
   }
   // Open the pane, make sure the thread is visible, and move keyboard focus to its card.
   function reveal(threadId: string): void {
@@ -243,7 +256,7 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
     if (!selectedAnchor) return;
     const anchor = selectedAnchor;
     const done = await perform(() => comments.addThread({ anchor, text: commentInput.value.trim() }));
-    if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; window.getSelection()!.removeAllRanges(); }
+    if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; showDraft(null); window.getSelection()!.removeAllRanges(); }
   });
   filter.addEventListener('change', render);
   // Popovers close on Escape, on a click elsewhere in the pane, and on a click outside it.
@@ -256,6 +269,7 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
   function destroy(): void {
     if (destroyed) return;
     destroyed = true; unsubscribe.forEach(off => off()); document.removeEventListener('click', onDocumentClick); host.remove();
+    draft.destroy();
   }
   render();
   return { element: host, destroy };

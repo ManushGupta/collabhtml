@@ -126,6 +126,7 @@ comments.getState(); comments.setState(latest);
 comments.view();                               // [{ thread, comments, placed }] in page order
 comments.getPerson(); comments.setPerson({ personId, personName });
 comments.focus(threadId); comments.destroy();
+comments.getRoot();            // the live root element, for resolving anchors
 ```
 
 Events (`on(type, handler)` returns an unsubscriber): `update` (comments or placement changed), `selection` (user selected text — anchor ready for `addThread`), `focus` (`threadId`), `busy` (boolean), `destroy`.

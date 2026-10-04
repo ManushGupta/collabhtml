@@ -83,9 +83,9 @@ export interface HighlightHandle {
   update: (ranges: Iterable<Range>) => void;
   destroy: () => void;
 }
-export function highlight(doc: Document, name: string): HighlightHandle {
+export function highlight(doc: Document, name: string, color = '#ffe69a'): HighlightHandle {
   const style = doc.createElement('style'); style.dataset.collabhtmlUi = '';
-  style.textContent = `::highlight(${name}) { background:#ffe69a; color:inherit; }`; doc.head.append(style);
+  style.textContent = `::highlight(${name}) { background:${color}; color:inherit; }`; doc.head.append(style);
   const win = doc.defaultView!;
   const winAny = win as any;
   return {
