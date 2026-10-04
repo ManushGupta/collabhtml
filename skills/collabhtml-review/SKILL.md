@@ -42,11 +42,13 @@ Identity is stable per name: `--name "Agent"` always maps to the same person ID 
 collabhtml reply <file> --thread <id> --name "<you>" --text "<what you changed>"
 collabhtml resolve <file> --thread <id> --name "<you>" --text "<closing note>"
 collabhtml reopen <file> --thread <id> --name "<you>" --text "<why it needs another look>"
+collabhtml reanchor <file> --thread <id> --exact "<new quote>" --name "<you>"
 ```
 
-- `reply` adds a follow-up comment; the thread stays open.
+- `reply` adds a follow-up comment; the thread stays open — and a reply on a *resolved* thread reopens it, with you recorded as the reopener.
 - `resolve` optionally takes `--text` (added first as a comment), then marks the thread resolved with you as the resolver.
 - `reopen` flips a resolved thread back to open, with an optional note.
+- `reanchor` moves a thread after you edited its text: give the new `--exact` quote (plus `--prefix`/`--suffix`/`--start`/`--end`). The old anchor is kept in history with your name on the move — provenance is never lost.
 - `thread` starts a new thread yourself: give `--exact` quoted text (plus optional `--prefix`/`--suffix`/`--start`/`--end`) and `--text`. The command prints the new thread ID — use it for follow-ups. A quote missing from the file warns and shows as Unplaced.
 
 ## 4. Verify

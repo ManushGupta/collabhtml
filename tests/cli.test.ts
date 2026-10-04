@@ -169,3 +169,13 @@ test('thread warns when the quote is absent from the file', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stderr, /Unplaced/);
 });
+
+test('reanchor moves the thread and keeps history', () => {
+  const { dir } = sandbox();
+  const file = reviewFile(dir);
+  const result = run(['reanchor', file, '--thread', 't1', '--exact', 'Hello world.', '--name', 'Agent'], dir);
+  assert.equal(result.status, 0, result.stderr);
+  const state = extractState(fs.readFileSync(file, 'utf8'));
+  assert.equal(state.threads[0].anchorHistory.length, 1);
+  assert.equal(state.threads[0].anchorHistory[0].personName, 'Agent');
+});

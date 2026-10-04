@@ -32,6 +32,12 @@ export function toMarkdown(input: CommentsState): string {
     const position = thread.anchor.find(selector => selector.type === 'TextPositionSelector') as
       { start: number; end: number } | undefined;
     if (position) lines.push(`Anchor offsets: ${position.start}–${position.end}`);
+    for (const record of thread.anchorHistory || []) {
+      const prior = quoteOf(record.anchor);
+      lines.push(prior
+        ? `Previously anchored on "${prior.exact}" (moved by ${record.personName}, ${record.timestamp}).`
+        : `Previously anchored elsewhere (moved by ${record.personName}, ${record.timestamp}).`);
+    }
     if (thread.status === 'resolved' && thread.statusChange) {
       lines.push(`Resolved by ${thread.statusChange.personName} (${thread.statusChange.timestamp}).`);
     }

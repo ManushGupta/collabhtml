@@ -118,3 +118,26 @@ test('metadata is patched, never interpreted, and bounded', () => {
   assert.throws(() => C.apply(started(), { type: 'thread.metadata', threadId: 'missing', metadata: { a: 1 }, ...actor }), /Thread not found/);
   assert.throws(() => C.apply(started(), { type: 'thread.metadata', threadId: 't1', metadata: ['a'], ...actor }), /metadata/);
 });
+
+test('reanchor moves the anchor and records history with actor', () => {
+  const moved = C.apply(started(), {
+    type: 'thread.reanchor', threadId: 't1',
+    anchor: [{ type: 'TextQuoteSelector', exact: 'new words' }],
+    ...actor
+  });
+  assert.equal(moved.threads[0].anchor[0].exact, 'new words');
+  assert.equal(moved.threads[0].anchorHistory.length, 1);
+  assert.equal(moved.threads[0].anchorHistory[0].anchor[0].exact, anchor[0].exact);
+  assert.deepEqual(moved.threads[0].anchorHistory[0].personId, 'person-2');
+  assert.throws(() => C.apply(started(), { type: 'thread.reanchor', threadId: 't1', anchor: [], ...actor }), /Invalid anchor/);
+  assert.throws(() => C.apply(started(), { type: 'thread.reanchor', threadId: 'missing', anchor: [{ type: 'TextQuoteSelector', exact: 'x' }], ...actor }), /Thread not found/);
+});
+
+test('a follow-up on a resolved thread reopens it with the commenter recorded', () => {
+  const resolved = C.setStatus(started(), { threadId: 't1', status: 'resolved', ...priya, timestamp });
+  assert.equal(resolved.threads[0].status, 'resolved');
+  const reopened = C.addComment(resolved, { threadId: 't1', commentId: 'c2', ...manu, timestamp, text: 'One more thing.' });
+  assert.equal(reopened.threads[0].status, 'open');
+  assert.deepEqual(reopened.threads[0].statusChange, { ...manu, timestamp });
+  assert.equal(reopened.comments.length, 2);
+});

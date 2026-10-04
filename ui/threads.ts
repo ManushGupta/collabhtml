@@ -204,6 +204,11 @@ export function renderThread(thread: Thread, threadComments: Comment[], placed: 
   const quote = node('button', undefined, 'quote');
   quote.append(node('span', (thread.anchor.find(selector => selector.type === 'TextQuoteSelector') as TextQuoteSelector).exact, 'quote-text'));
   quote.type = 'button'; quote.title = 'Show in page'; quote.addEventListener('click', () => ctx.onLocate(thread.threadId)); card.append(quote);
+  // Provenance: comments were written against earlier text. Show where the thread started.
+  for (const record of thread.anchorHistory || []) {
+    const prior = record.anchor.find(selector => selector.type === 'TextQuoteSelector') as TextQuoteSelector | undefined;
+    if (prior) card.append(node('p', `Originally on “${prior.exact}”`, 'muted'));
+  }
   if (thread.status === 'resolved' && thread.statusChange) card.append(node('p', `Resolved by ${thread.statusChange.personName}`, 'muted'));
   threadComments.forEach((comment, index) => card.append(renderComment(comment, thread, index === 0, ctx)));
 

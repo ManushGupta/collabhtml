@@ -18,7 +18,7 @@ test('the primitive has no UI, storage, export, network, or startup logic', () =
 
 test('the default UI calls only the primitive public API', () => {
   const publicMethods = new Set(['getState', 'setState', 'view', 'getPerson', 'setPerson', 'addThread', 'addComment', 'setStatus',
-    'toggleReaction', 'editComment', 'deleteComment', 'updateMetadata', 'focus', 'on', 'destroy']);
+    'toggleReaction', 'editComment', 'deleteComment', 'updateMetadata', 'reanchor', 'focus', 'on', 'destroy']);
   const source = ['ui/pane.ts', 'ui/threads.ts'].map(file => strip(read(file))).join('\n');
   // Method calls on the controller passed to mount(comments).
   const used = new Set([...source.matchAll(/(?<![.\w/'"])comments\.(\w+)/g)].map(match => match[1]));

@@ -24,6 +24,7 @@ collabhtml reply report.collab.html --thread t1 --name "Agent" --text "Fixed in 
 collabhtml resolve report.collab.html --thread t1 --name "Agent" --text "Verified and resolved."
 collabhtml reopen report.collab.html --thread t1 --name "Agent" --text "One more check needed."
 collabhtml thread report.collab.html --exact "needs work" --name "Agent" --text "What should this be?"
+collabhtml reanchor report.collab.html --thread t1 --exact "new wording" --name "Agent"
 ```
 
 `extract` renders threads, quotes, anchor offsets, and authorship as Markdown (or raw JSON) — readable by humans, parseable by agents. `reply`, `resolve`, and `reopen` write back through the same operation protocol the UI uses, so every step lands in the file with its author and timestamp. Agent identity is stable per name (`agent:<name>` unless `--id` is given), so follow-ups across runs belong to the same person. Agents can also start threads directly with `thread --exact "quoted text" --text "..."`.
@@ -80,7 +81,7 @@ Comment: { commentId, threadId, personId, personName, timestamp, text,
            reactions?, edited?, deleted?, metadata? }
 ```
 
-The first comment starts a thread. Every follow-up comment uses the same `threadId`. The anchor and status belong to the thread. The first six comment fields are required. `statusChange`, `edited`, and `deleted` record `{ personId, personName, timestamp }`. `reactions` maps a key to the `personId` values that chose it. `metadata` is host data that the library stores but never interprets.
+The first comment starts a thread. Every follow-up comment uses the same `threadId`. A follow-up on a resolved thread reopens it, recording the commenter in `statusChange`. The anchor and status belong to the thread. The first six comment fields are required. `statusChange`, `edited`, and `deleted` record `{ personId, personName, timestamp }`. `reactions` maps a key to the `personId` values that chose it. `metadata` is host data that the library stores but never interprets.
 
 State is `{ schemaVersion: 3, document: { id, revision }, threads, comments }`.
 
@@ -90,6 +91,7 @@ Every change is an **operation**:
 { type: 'thread.started', thread: { threadId, anchor, status: 'open' }, comment }
 { type: 'comment.added', comment }
 { type: 'thread.status',    threadId, status,         ...actor }
+{ type: 'thread.reanchor',  threadId, anchor,         ...actor }  // moves the thread; old anchor kept in anchorHistory
 { type: 'reaction.toggled', commentId, key,          ...actor }  // adds or removes the actor's reaction
 { type: 'comment.edited',   commentId, text,         ...actor }
 { type: 'comment.deleted',  commentId,               ...actor }  // keeps a tombstone; text is removed

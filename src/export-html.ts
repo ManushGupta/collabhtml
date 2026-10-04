@@ -16,6 +16,11 @@ export function exportHTML({ root, state, runtimeSource, bootstrapSource }: Expo
     if (typeof source !== 'string' || !source.trim()) throw new Error(`Provide ${name} for HTML export`);
   }
   const snapshot = serialize(state);
+  if (!root.id) {
+    let id = 'collabhtml-content'; let suffix = 0;
+    while (root.ownerDocument.getElementById(id)) id = `collabhtml-content-${++suffix}`;
+    root.id = id;
+  }
   const copy = document.documentElement.cloneNode(true) as HTMLElement;
   copy.querySelectorAll('[data-collabhtml-ui],script[data-collabhtml-runtime],script[data-collabhtml-comments],script[data-collabhtml-bootstrap]').forEach(element => element.remove());
   const exportedRoot = root === document.body ? copy.querySelector('body') : root.id ? copy.querySelector(`#${CSS.escape(root.id)}`) : null;

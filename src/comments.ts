@@ -35,7 +35,14 @@ export interface Thread {
   anchor: Anchor;
   status: 'open' | 'resolved';
   statusChange?: Actor;
+  anchorHistory?: AnchorRecord[];
   metadata?: Metadata;
+}
+export interface AnchorRecord {
+  anchor: Anchor;
+  personId: string;
+  personName: string;
+  timestamp: string;
 }
 export interface Comment {
   commentId: string;
@@ -61,6 +68,7 @@ export interface Operation {
   comment?: any;
   threadId?: string;
   commentId?: string;
+  anchor?: Anchor;
   status?: 'open' | 'resolved';
   key?: string;
   text?: string;
@@ -173,6 +181,14 @@ function validateThread(thread: Thread): void {
   validateAnchor(thread.anchor);
   if (!['open', 'resolved'].includes(thread.status)) fail('Invalid thread status');
   if (thread.statusChange !== undefined) validateActor(thread.statusChange, 'statusChange');
+  if (thread.anchorHistory !== undefined) {
+    if (!Array.isArray(thread.anchorHistory) || thread.anchorHistory.length > 100) fail('Invalid anchor history');
+    for (const record of thread.anchorHistory) {
+      if (!record || typeof record !== 'object') fail('Invalid anchor history');
+      validateAnchor(record.anchor);
+      validateActor(record, 'anchor history');
+    }
+  }
   if (thread.metadata !== undefined) validateMetadata(thread.metadata);
 }
 function validateComment(comment: Comment): void {
@@ -227,10 +243,15 @@ export function startThread(state: CommentsState, input: StartThreadInput): Comm
   return validate(next);
 }
 // input: { threadId, commentId, personId, personName, timestamp, text }
+// A follow-up on a resolved thread reopens it: new discussion voids the old resolution.
 export function addComment(state: CommentsState, input: AddCommentInput): CommentsState {
   const next = validate(state);
-  find(next.threads, 'threadId', input.threadId, 'Thread');
+  const thread = find(next.threads, 'threadId', input.threadId, 'Thread');
   next.comments.push(pickComment(input, input.threadId));
+  if (thread.status === 'resolved') {
+    thread.status = 'open';
+    thread.statusChange = { personId: input.personId, personName: input.personName, timestamp: input.timestamp };
+  }
   return validate(next);
 }
 // input: { threadId, status, personId, personName, timestamp }
@@ -266,6 +287,7 @@ function liveComment(next: CommentsState, commentId: string): Comment {
 //   { type: 'comment.deleted', commentId, ...actor }         keeps a tombstone; text is removed
 //   { type: 'thread.metadata', threadId, metadata, ...actor }
 //   { type: 'comment.metadata', commentId, metadata, ...actor }
+//   { type: 'thread.reanchor', threadId, anchor, ...actor }   moves the thread; the old anchor is kept in anchorHistory
 export function apply(state: CommentsState, operation: Operation): CommentsState {
   if (!operation || typeof operation !== 'object') fail('Invalid operation');
   switch (operation.type) {
@@ -304,6 +326,17 @@ export function apply(state: CommentsState, operation: Operation): CommentsState
     case 'thread.metadata': {
       const next = validate(state); actorOf(operation);
       patchMetadata(find(next.threads, 'threadId', operation.threadId as string, 'Thread'), operation.metadata as Record<string, any>);
+      return validate(next);
+    }
+    case 'thread.reanchor': {
+      const next = validate(state); const actor = actorOf(operation);
+      const thread = find(next.threads, 'threadId', operation.threadId as string, 'Thread');
+      const anchor = operation.anchor as Anchor;
+      validateAnchor(anchor);
+      const history = thread.anchorHistory || [];
+      history.push({ anchor: thread.anchor, ...actor });
+      thread.anchorHistory = history;
+      thread.anchor = anchor;
       return validate(next);
     }
     case 'comment.metadata': {

@@ -40,6 +40,7 @@ export interface Controller {
   editComment: (commentId: string, text: string) => Promise<ChangeResult>;
   deleteComment: (commentId: string) => Promise<ChangeResult>;
   updateMetadata: (target: { threadId?: string; commentId?: string }, metadata: Record<string, any>) => Promise<ChangeResult>;
+  reanchor: (threadId: string, anchor: Anchor) => Promise<ChangeResult>;
   focus: (threadId: string) => boolean;
   on: (type: string, handler: ListenerFn) => () => void;
   destroy: () => void;
@@ -157,6 +158,7 @@ export function create(options: ControllerOptions = {}): Controller {
     toggleReaction: (commentId, key) => change(() => actorOperation({ type: 'reaction.toggled', commentId, key })),
     editComment: (commentId, text) => change(() => actorOperation({ type: 'comment.edited', commentId, text })),
     deleteComment: commentId => change(() => actorOperation({ type: 'comment.deleted', commentId })),
+    reanchor: (threadId, anchor) => change(() => actorOperation({ type: 'thread.reanchor', threadId, anchor })),
     // target is { threadId } or { commentId }. A null value removes a key.
     updateMetadata: (target, metadata) => change(() => {
       const forThread = target?.threadId !== undefined;

@@ -45,6 +45,7 @@ Agent loop (human reviews in, agent work out, resolution back in):
   collabhtml reply report.collab.html --thread t1 --name "Agent" --text "Fixed in revision 2."
   collabhtml resolve report.collab.html --thread t1 --name "Agent" --text "Verified and resolved."
   collabhtml thread report.collab.html --exact "needs work" --name "Agent" --text "Flagging this."
+  collabhtml reanchor report.collab.html --thread t1 --exact "new wording" --name "Agent"
 
 Agent skill (teach any compatible agent the loop above):
   collabhtml skill                 # print the skill file
@@ -210,16 +211,12 @@ function runSkill(): void {
   console.log(text);
 }
 
-function runThread(inputPath: string): void {
+function buildAnchorFromFlags(inputPath: string, html: string): Anchor {
   const exact = flag('--exact');
-  const text = flag('--text');
-  if (!exact || !text) {
-    console.error('Error: --exact and --text are required.');
+  if (!exact) {
+    console.error('Error: --exact is required.');
     process.exit(1);
   }
-  const { html, state } = readState(inputPath);
-  const actor = actorInput();
-  const threadId = flag('--thread-id') || createId();
   const anchor: Anchor = [
     {
       type: 'TextQuoteSelector',
@@ -242,11 +239,38 @@ function runThread(inputPath: string): void {
   if (!html.includes(exact)) {
     console.error(`Warning: quoted text not found in ${inputPath}; the thread will show as Unplaced.`);
   }
+  return anchor;
+}
+
+function runThread(inputPath: string): void {
+  const text = flag('--text');
+  if (!text) {
+    console.error('Error: --text is required.');
+    process.exit(1);
+  }
+  const { html, state } = readState(inputPath);
+  const actor = actorInput();
+  const threadId = flag('--thread-id') || createId();
+  const anchor = buildAnchorFromFlags(inputPath, html);
   const next = startThread(state, {
     threadId, anchor, commentId: createId(), ...actor, text
   });
   writeState(inputPath, embedState(html, next), args.indexOf('--out'));
   console.log(`Created thread ${threadId}.`);
+}
+
+function runReanchor(inputPath: string): void {
+  const threadId = flag('--thread');
+  if (!threadId) {
+    console.error('Error: --thread is required.');
+    process.exit(1);
+  }
+  const { html, state } = readState(inputPath);
+  const actor = actorInput();
+  const anchor = buildAnchorFromFlags(inputPath, html);
+  const next = apply(state, { type: 'thread.reanchor', threadId, anchor, ...actor });
+  writeState(inputPath, embedState(html, next), args.indexOf('--out'));
+  console.log(`Reanchored thread ${threadId}; previous anchor kept in history.`);
 }
 
 function main(): void {
@@ -267,6 +291,7 @@ function main(): void {
   if (first === 'resolve' && second) return runResolve(second);
   if (first === 'reopen' && second) return runReopen(second);
   if (first === 'thread' && second) return runThread(second);
+  if (first === 'reanchor' && second) return runReanchor(second);
   if (first === 'skill') return runSkill();
 
   const inputPath = args.find(arg => !arg.startsWith('-'));

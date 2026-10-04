@@ -1,7 +1,7 @@
 // Responsibility: brief tests — markdown shape, state extraction, and embedding.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { empty, startThread, addComment, setStatus } from '../src/comments.js';
+import { empty, startThread, addComment, apply, setStatus } from '../src/comments.js';
 import { embedState, extractState, toMarkdown } from '../src/brief.js';
 
 const t = '2026-10-04T20:00:00.000Z';
@@ -62,4 +62,11 @@ test('extract returns null without embedded state; embed round-trips', () => {
 test('extract rejects corrupt payloads', () => {
   const bad = '<script type="application/json" data-collabhtml-comments="">{"nope":true}</script>';
   assert.throws(() => extractState(bad), /Invalid/);
+});
+
+test('markdown shows anchor history with mover and prior quote', () => {
+  const moved = { type: 'thread.reanchor', threadId: 't1', anchor: [{ type: 'TextQuoteSelector', exact: 'new words' }], personId: 'u-2', personName: 'Manu', timestamp: t };
+  const md = toMarkdown(apply(oneThread(), moved));
+  assert.match(md, /Previously anchored on "revenue increased"/);
+  assert.match(md, /moved by Manu/);
 });
