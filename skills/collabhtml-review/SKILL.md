@@ -54,3 +54,5 @@ collabhtml reanchor <file> --thread <id> --exact "<new quote>" --name "<you>"
 ## 4. Verify
 
 Re-run `extract` and confirm: your comments are present, the status is what you intended, and your person ID is identical across your actions. A thread is done only when the brief shows it resolved with your closing note.
+
+When the human says they saved, always work from their latest saved file — named after the document (`<title>.collab.html`, repeats deduped by the browser).
