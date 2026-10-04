@@ -1,0 +1,29 @@
+name: Publish
+
+# Publishes to npm when a version tag is pushed. Tags are immutable release
+# markers: do NOT move a tag after its publish run — cut a new version instead.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org/'
+      - run: npm ci
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm test
+      - name: Tag matches package version
+        run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}" || (echo "tag ${GITHUB_REF_NAME} != package.json version" && exit 1)
+      - run: npm publish --provenance --access public
