@@ -29,16 +29,14 @@ state = startThread(state, { threadId: 't1', anchor: [...], commentId: 'c1', per
 
 **Agent loop — humans review, agents resolve (or the reverse):**
 
-```bash
-collabhtml extract report.collab.html --format markdown   # reviews out (or --format json)
-collabhtml reply report.collab.html --thread t1 --name "Agent" --text "Fixed in revision 2."
-collabhtml resolve report.collab.html --thread t1 --name "Agent" --text "Verified and resolved."
-collabhtml reopen report.collab.html --thread t1 --name "Agent" --text "One more check needed."
-collabhtml thread report.collab.html --exact "needs work" --name "Agent" --text "What should this be?"
-collabhtml reanchor report.collab.html --thread t1 --exact "new wording" --name "Agent"
-```
+- `extract report.collab.html [--format markdown|json]` — pulls reviews out: threads, quotes, anchor offsets, authorship. Markdown reads naturally, JSON parses programmatically.
+- `reply … --thread t1 --name "Agent" --text "…"` — follows up on a thread (reopens it if resolved).
+- `resolve … --thread t1 --name "Agent" [--text "…"]` — optionally comments first, then marks resolved.
+- `reopen … --thread t1 --name "Agent" [--text "…"]` — flips a resolved thread back open.
+- `thread … --exact "quoted text" --name "Agent" --text "…"` — starts a new thread yourself; prints its ID.
+- `reanchor … --thread t1 --exact "new wording" --name "Agent"` — moves a thread after editing its text, keeping history.
 
-`extract` renders threads, quotes, anchor offsets, and authorship as Markdown (or raw JSON). `reply`, `resolve`, `reopen`, `thread`, and `reanchor` write back through the same operation protocol the UI uses, with stable per-name identity (`agent:<name>` unless `--id` is given). For agents: `npx skills add ManushGupta/collabhtml --skill collabhtml-review` (or `-g` for global); see [`skills/collabhtml-review/SKILL.md`](skills/collabhtml-review/SKILL.md).
+All writes go through the same operation protocol the UI uses, with stable per-name identity (`agent:<name>` unless `--id` is given). For agents: `npx skills add ManushGupta/collabhtml --skill collabhtml-review` (or `-g` for global); see [`skills/collabhtml-review/SKILL.md`](skills/collabhtml-review/SKILL.md).
 
 ## Why
 
