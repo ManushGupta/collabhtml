@@ -2,11 +2,19 @@
 
 **A collaboration layer over HTML.**
 
-## Installation
+## Two ways to use CollabHTML
+
+### 1. Standalone HTML (no install needed)
+
+Open `dist/demo.html` directly in a browser. Enter your name, select text, add comments, and save an HTML copy with comments embedded. No server, no dependencies — the file is completely self-contained.
+
+### 2. As a library (for developers)
 
 ```bash
 npm install collabhtml
 ```
+
+Use the primitive in your own app, with or without the default UI. See [Use the primitive](#use-the-primitive) and [Use the default UI](#use-the-default-ui) below.
 
 ![CollabHTML demo: review an agent-written plan with comments, in a standalone file and in a hosted viewer](docs/collabhtml-demo.gif)
 
@@ -24,47 +32,6 @@ CollabHTML has two layers:
 - **The default UI** is an optional comments pane. It uses only the primitive's public API. Use it, or build your own.
 
 The host owns identity, permissions, and storage. HTML export is an optional function.
-
-## Responsibilities at a glance
-
-```text
-src/                         THE PRIMITIVE (headless, no UI)
-  comments.js                Comment API: threads, comments, operations, validation
-  anchors.js                 Selected text -> W3C selectors -> DOM range; highlights
-  controller.js              create(): methods, view(), events, change queue
-  export-html.js             Optional HTML packaging; no startup or download
-
-ui/                          DEFAULT UI (optional; public API only)
-  pane.js                    Pane shell: styles, compose form, filter, mount()
-  threads.js                 Thread cards: comments, reactions, menus, edit/delete
-
-examples/standalone/          SINGLE-FILE DEMONSTRATION
-  index.html                 Sample content
-  bootstrap.js               Starts comments; Save button, download, unsaved warning
-  README.md                  Standalone usage
-
-examples/viewer/              SERVICE-INTEGRATION DEMONSTRATION
-  index.html                 Upload controls and isolated iframe
-  viewer.js                  Upload processing, identity, injection, message checks
-  bridge.js                  Iframe startup; load/apply messages; Refresh and Save actions
-  storage.js                 Example storage contract: load and apply
-  server.js                  Loopback server and comments API
-  file-store.js              Server JSON persistence; applies one operation at a time
-  README.md                  Integration and security guide
-
-scripts/build.js             Builds the bundles and the standalone example
-docs/                        Demo video, GIF, and the scripts that record them (docs/demo/)
-tests/                       Unit, API, boundary, and browser checks
-```
-
-Each implementation and test file starts with its responsibility. A test enforces the layers: the primitive has no UI, storage, or export code, and the UI calls only public methods.
-
-| Bundle | Contains | Needs |
-|---|---|---|
-| `dist/collabhtml.js` | The primitive | Nothing |
-| `dist/collabhtml-pane.js` | The default UI | `collabhtml.js` first |
-| `dist/collabhtml-export.js` | `exportHTML()` | `collabhtml.js` first |
-| `dist/collabhtml-full.js` | All three | Nothing |
 
 ## Comment API
 
@@ -192,30 +159,6 @@ If the primitive has no person, the pane asks for a name and uses an unverified 
 
 **To build your own UI,** skip `collabhtml-pane.js`. Listen to `selection` and `update`, call `view()` to draw, and call the methods. The default UI does the same and nothing more. The UI text and colors are fixed in the pane today; your own UI controls them.
 
-## Connect a service
-
-The browser runs CollabHTML. The service stores operations or state in any language (Node.js, Python, Java, and so on):
-
-```text
-UI → comments.addComment() → onChange(operation) → service API → database or files
-service API → latest state → onChange return value, or setState()
-```
-
-Store operations as rows or apply them to a stored state. Operations append or change one thread, so two people adding comments do not overwrite each other. The service owns authentication, permissions, encryption, ordering, and notifications. For updates from other people, call `setState()` after polling, a push message, or a manual Refresh.
-
-## Run the examples
-
-Requires Node.js 20 or newer for the build and example server only. No package install is needed.
-
-```sh
-npm run build
-npm test
-npm run dev
-```
-
-- **Standalone:** open <http://127.0.0.1:4173>, or open `dist/demo.html` directly. Enter your name, select text, add a comment, reply, resolve, and click **Save HTML with comments**. Comments stay in memory until you save. See [the standalone guide](examples/standalone/README.md).
-- **Viewer service:** open <http://127.0.0.1:4173/examples/viewer/index.html>. Upload HTML or open the sample. Each operation is sent to the example server and stored in `.collabhtml-data/comments-v3/`. See [the viewer guide](examples/viewer/README.md).
-
 ## Optional HTML export
 
 `dist/collabhtml-export.js` adds one function:
@@ -230,6 +173,71 @@ const html = CollabHTML.exportHTML({
 ```
 
 It only returns HTML. The caller supplies the library code and startup code to embed. It does not fetch scripts, start the pane, add buttons, download files, or warn about unsaved changes. Give the root a unique ID. Mark library and host scripts with `data-collabhtml-runtime` and `data-collabhtml-bootstrap`; export replaces them with the supplied code. Comments are embedded in `<script type="application/json" data-collabhtml-comments>`.
+
+## Connect a service
+
+The browser runs CollabHTML. The service stores operations or state in any language (Node.js, Python, Java, and so on):
+
+```text
+UI → comments.addComment() → onChange(operation) → service API → database or files
+service API → latest state → onChange return value, or setState()
+```
+
+Store operations as rows or apply them to a stored state. Operations append or change one thread, so two people adding comments do not overwrite each other. The service owns authentication, permissions, encryption, ordering, and notifications. For updates from other people, call `setState()` after polling, a push message, or a manual Refresh.
+
+## Responsibilities at a glance
+
+```text
+src/                         THE PRIMITIVE (headless, no UI)
+  comments.js                Comment API: threads, comments, operations, validation
+  anchors.js                 Selected text -> W3C selectors -> DOM range; highlights
+  controller.js              create(): methods, view(), events, change queue
+  export-html.js             Optional HTML packaging; no startup or download
+
+ui/                          DEFAULT UI (optional; public API only)
+  pane.js                    Pane shell: styles, compose form, filter, mount()
+  threads.js                 Thread cards: comments, reactions, menus, edit/delete
+
+examples/standalone/          SINGLE-FILE DEMONSTRATION
+  index.html                 Sample content
+  bootstrap.js               Starts comments; Save button, download, unsaved warning
+  README.md                  Standalone usage
+
+examples/viewer/              SERVICE-INTEGRATION DEMONSTRATION
+  index.html                 Upload controls and isolated iframe
+  viewer.js                  Upload processing, identity, injection, message checks
+  bridge.js                  Iframe startup; load/apply messages; Refresh and Save actions
+  storage.js                 Example storage contract: load and apply
+  server.js                  Loopback server and comments API
+  file-store.js              Server JSON persistence; applies one operation at a time
+  README.md                  Integration and security guide
+
+scripts/build.js             Builds the bundles and the standalone example
+docs/                        Demo video, GIF, and the scripts that record them (docs/demo/)
+tests/                       Unit, API, boundary, and browser checks
+```
+
+Each implementation and test file starts with its responsibility. A test enforces the layers: the primitive has no UI, storage, or export code, and the UI calls only public methods.
+
+| Bundle | Contains | Needs |
+|---|---|---|
+| `dist/collabhtml.js` | The primitive | Nothing |
+| `dist/collabhtml-pane.js` | The default UI | `collabhtml.js` first |
+| `dist/collabhtml-export.js` | `exportHTML()` | `collabhtml.js` first |
+| `dist/collabhtml-full.js` | All three | Nothing |
+
+## Run the examples
+
+Requires Node.js 20 or newer for the build and example server only. No package install is needed.
+
+```sh
+npm run build
+npm test
+npm run dev
+```
+
+- **Standalone:** open <http://127.0.0.1:4173>, or open `dist/demo.html` directly. Enter your name, select text, add a comment, reply, resolve, and click **Save HTML with comments**. Comments stay in memory until you save. See [the standalone guide](examples/standalone/README.md).
+- **Viewer service:** open <http://127.0.0.1:4173/examples/viewer/index.html>. Upload HTML or open the sample. Each operation is sent to the example server and stored in `.collabhtml-data/comments-v3/`. See [the viewer guide](examples/viewer/README.md).
 
 ## Anchors
 
