@@ -1,0 +1,6 @@
+# Responsibility: exclude generated bundles, test output, and example review data.
+node_modules/
+dist/
+test-results/
+.collabhtml-data/
+.DS_Store

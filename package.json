@@ -1,0 +1,13 @@
+{
+  "name": "collabhtml",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CollabHTML: a collaboration layer over HTML. Comment threads with pluggable storage and optional HTML export.",
+  "main": "src/comments.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node --test tests/*.test.js",
+    "dev": "node examples/viewer/server.js"
+  },
+  "engines": { "node": ">=20" }
+}
