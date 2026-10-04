@@ -42,7 +42,7 @@ export interface TextIndex {
 export function textIndex(root: Element): TextIndex {
   const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(item: Node): number {
-      return (item.parentElement as Element).closest('script,style,noscript,template,[data-collabhtml-ui]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      return item.parentElement!.closest('script,style,noscript,template,[data-collabhtml-ui]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
     }
   });
   const nodes: TextNodeRef[] = []; let content = ''; let item: Node | null;
@@ -54,14 +54,14 @@ export function toRange(index: TextIndex, position: { start: number; end: number
   const start = index.nodes.find(item => position.start >= item.start && position.start < item.start + item.node.length);
   const end = index.nodes.find(item => position.end > item.start && position.end <= item.start + item.node.length);
   if (!start || !end) return null;
-  const range = (start.node.ownerDocument as Document).createRange();
+  const range = start.node.ownerDocument!.createRange();
   range.setStart(start.node, position.start - start.start); range.setEnd(end.node, position.end - end.start);
   return range;
 }
 // The current selection inside root as an anchor, or null.
 export function capture(root: Element): Anchor | null {
   const doc = root.ownerDocument;
-  const selection = (doc.defaultView as Window).getSelection();
+  const selection = doc.defaultView!.getSelection();
   if (!selection || selection.isCollapsed || !selection.rangeCount) return null;
   const range = selection.getRangeAt(0);
   if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return null;
@@ -86,7 +86,7 @@ export interface HighlightHandle {
 export function highlight(doc: Document, name: string): HighlightHandle {
   const style = doc.createElement('style'); style.dataset.collabhtmlUi = '';
   style.textContent = `::highlight(${name}) { background:#ffe69a; color:inherit; }`; doc.head.append(style);
-  const win = doc.defaultView as Window;
+  const win = doc.defaultView!;
   const winAny = win as any;
   return {
     update(ranges: Iterable<Range>): void { if (winAny.CSS?.highlights && winAny.Highlight) winAny.CSS.highlights.set(name, new winAny.Highlight(...ranges)); },

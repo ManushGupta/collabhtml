@@ -222,5 +222,3 @@ export function renderThread(thread: Thread, threadComments: Comment[], placed: 
   return card;
 }
 
-// Browser global for script-tag use.
-(globalThis as any).CollabHTMLThreads = { renderThread, icon };

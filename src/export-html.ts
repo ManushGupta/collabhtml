@@ -30,9 +30,7 @@ export function exportHTML({ root, state, runtimeSource, bootstrapSource }: Expo
   runtime.textContent = runtimeSource.replace(/<\/script/gi, '<\\/script');
   const bootstrap = document.createElement('script'); bootstrap.dataset.collabhtmlBootstrap = '';
   bootstrap.textContent = bootstrapSource.replace(/<\/script/gi, '<\\/script');
-  (copy.querySelector('body') as HTMLElement).append(data, runtime, bootstrap);
+  copy.querySelector('body')!.append(data, runtime, bootstrap);
   return '<!doctype html>\n' + copy.outerHTML;
 }
 
-// Browser global for script-tag use.
-(globalThis as any).CollabHTML.exportHTML = exportHTML;

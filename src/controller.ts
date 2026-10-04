@@ -46,7 +46,6 @@ export interface Controller {
 }
 
 const instances = new WeakMap<Element, Controller>();
-const copy = (value: any): any => JSON.parse(JSON.stringify(value));
 // update: comments or anchor placement changed.  selection: the user selected text (detail: anchor).
 // focus: a thread was focused (detail: threadId).  busy: changes are pending (detail: boolean).
 // destroy: the controller is being removed, so a UI can detach.
@@ -66,7 +65,7 @@ export function create(options: ControllerOptions = {}): Controller {
   const now = (): string => new Date().toISOString();
 
   function emit(type: string, detail?: any): void {
-    for (const handler of listeners.get(type) as Set<ListenerFn>) {
+    for (const handler of listeners.get(type)!) {
       try { handler(detail); } catch (error) { console.error('CollabHTML listener failed:', error); }
     }
   }
@@ -84,13 +83,13 @@ export function create(options: ControllerOptions = {}): Controller {
 
   // Find each thread's text again, update highlights, and tell listeners.
   function refresh(operation?: Operation): void {
-    const index = A.textIndex(root as Element); ranges.clear();
+    const index = A.textIndex(root!); ranges.clear();
     for (const thread of state.threads) {
       const range = A.toRange(index, A.locate(index.content, thread.anchor));
       if (range) ranges.set(thread.threadId, range);
     }
     highlights?.update(ranges.values());
-    emit('update', operation ? { operation: copy(operation) } : {});
+    emit('update', operation ? { operation: structuredClone(operation) } : {});
   }
   // The host sees a validated operation first. If onChange returns the host's latest
   // state, that state wins. Otherwise the operation is applied to the current state.
@@ -98,11 +97,11 @@ export function create(options: ControllerOptions = {}): Controller {
     if (destroyed) throw new Error('Comments are detached');
     const operation = makeOperation();
     const next = C.apply(state, operation);
-    const confirmed = await options.onChange?.(copy(operation), { previous: C.validate(state), next, document: { ...state.document } });
+    const confirmed = await options.onChange?.(structuredClone(operation), { previous: C.validate(state), next, document: { ...state.document } });
     if (destroyed) throw new Error('Comments are detached');
     state = confirmed ? checked(confirmed as CommentsState) : C.apply(state, operation);
     refresh(operation);
-    return { operation: copy(operation), state: C.validate(state) };
+    return { operation: structuredClone(operation), state: C.validate(state) };
   }
   // Changes run one at a time, in the order they were requested.
   function change(makeOperation: () => Operation): Promise<ChangeResult> {
@@ -116,8 +115,8 @@ export function create(options: ControllerOptions = {}): Controller {
   function captureSelection(): void {
     if (destroyed) return;
     let anchor: Anchor | null = null;
-    try { anchor = A.capture(root as Element); } catch { return; }
-    if (anchor) emit('selection', copy(anchor));
+    try { anchor = A.capture(root!); } catch { return; }
+    if (anchor) emit('selection', structuredClone(anchor));
   }
   document.addEventListener('mouseup', captureSelection); document.addEventListener('keyup', captureSelection);
   const observer = new MutationObserver(() => { if (!destroyed) refresh(); });
@@ -133,13 +132,13 @@ export function create(options: ControllerOptions = {}): Controller {
     // Threads in page order, each with its comments. placed is false when the text can no longer be found.
     view(): ControllerViewItem[] {
       const byThread = new Map<string, Comment[]>(state.threads.map(thread => [thread.threadId, []]));
-      for (const comment of state.comments) (byThread.get(comment.threadId) as Comment[]).push(comment);
+      for (const comment of state.comments) (byThread.get(comment.threadId)!).push(comment);
       const ordered = [...state.threads].sort((a, b) => {
         const first = ranges.get(a.threadId); const second = ranges.get(b.threadId);
         if (first && second) return first.compareBoundaryPoints(Range.START_TO_START, second);
         return first ? -1 : second ? 1 : 0;
       });
-      return copy(ordered.map(thread => ({ thread, comments: byThread.get(thread.threadId), placed: ranges.has(thread.threadId) })));
+      return structuredClone(ordered.map(thread => ({ thread, comments: byThread.get(thread.threadId) ?? [], placed: ranges.has(thread.threadId) })));
     },
     // Who changes are made as. The host sets this from its login session.
     getPerson: () => (person ? { ...person } : null),
@@ -147,23 +146,22 @@ export function create(options: ControllerOptions = {}): Controller {
 
     // Every method below returns a promise for { operation, state } and rejects when they fail.
     addThread: ({ anchor, text, threadId } = {}) => change(() => {
-      const validAnchor = anchor as Anchor;
+      const validAnchor: Anchor = anchor!;
       C.validateAnchor(validAnchor);
-      if (!A.locate(A.textIndex(root).content, validAnchor)) throw new Error('Selection changed. Select the text again.');
+      if (!A.locate(A.textIndex(root!).content, validAnchor)) throw new Error('Selection changed. Select the text again.');
       const id = threadId || C.createId();
-      return { type: 'thread.started', thread: { threadId: id, anchor: validAnchor, status: 'open' }, comment: newComment(id, text as string) };
+      return { type: 'thread.started', thread: { threadId: id, anchor: validAnchor, status: 'open' }, comment: newComment(id, text!) };
     }),
-    addComment: ({ threadId, text } = {}) => change(() => ({ type: 'comment.added', comment: newComment(threadId as string, text as string) })),
+    addComment: ({ threadId, text } = {}) => change(() => ({ type: 'comment.added', comment: newComment(threadId!, text!) })),
     setStatus: (threadId, status) => change(() => actorOperation({ type: 'thread.status', threadId, status })),
     toggleReaction: (commentId, key) => change(() => actorOperation({ type: 'reaction.toggled', commentId, key })),
     editComment: (commentId, text) => change(() => actorOperation({ type: 'comment.edited', commentId, text })),
     deleteComment: commentId => change(() => actorOperation({ type: 'comment.deleted', commentId })),
     // target is { threadId } or { commentId }. A null value removes a key.
     updateMetadata: (target, metadata) => change(() => {
-      const t = target as { threadId?: string; commentId?: string };
-      const forThread = t?.threadId !== undefined;
-      if (forThread === (t?.commentId !== undefined)) throw new Error('Give either threadId or commentId');
-      return actorOperation(forThread ? { type: 'thread.metadata', threadId: t.threadId, metadata } : { type: 'comment.metadata', commentId: t.commentId, metadata });
+      const forThread = target?.threadId !== undefined;
+      if (forThread === (target?.commentId !== undefined)) throw new Error('Give either threadId or commentId');
+      return actorOperation(forThread ? { type: 'thread.metadata', threadId: target.threadId, metadata } : { type: 'comment.metadata', commentId: target.commentId, metadata });
     }),
 
     // Scroll to the thread's text, select it, and emit focus. Returns false for an unknown thread.
@@ -172,8 +170,8 @@ export function create(options: ControllerOptions = {}): Controller {
       if (!state.threads.some(thread => thread.threadId === threadId)) return false;
       const range = ranges.get(threadId);
       if (range) {
-        (range.startContainer.parentElement as Element).scrollIntoView({ behavior: 'smooth', block: 'center' });
-        const selection = window.getSelection() as Selection; selection.removeAllRanges(); selection.addRange(range.cloneRange());
+        range.startContainer.parentElement!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const selection = window.getSelection()!; selection.removeAllRanges(); selection.addRange(range.cloneRange());
       }
       emit('focus', threadId);
       return true;
@@ -181,8 +179,8 @@ export function create(options: ControllerOptions = {}): Controller {
     // Returns a function that removes the handler.
     on(type: string, handler: ListenerFn): () => void {
       if (!listeners.has(type) || typeof handler !== 'function') throw new Error(`on(type, handler): type is one of ${EVENTS.join(', ')}`);
-      (listeners.get(type) as Set<ListenerFn>).add(handler);
-      return () => (listeners.get(type) as Set<ListenerFn>).delete(handler);
+      listeners.get(type)!.add(handler);
+      return () => listeners.get(type)!.delete(handler);
     },
     destroy(): void {
       if (destroyed) return;
@@ -196,5 +194,3 @@ export function create(options: ControllerOptions = {}): Controller {
   instances.set(root, controller); refresh(); return controller;
 }
 
-// Browser global for script-tag use. Node consumers import { create } instead.
-(globalThis as any).CollabHTML = { create, comments: C };

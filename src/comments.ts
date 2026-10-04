@@ -96,7 +96,6 @@ export interface SetStatusInput {
 
 export const SCHEMA_VERSION = 3;
 const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-const clone = (value: any): any => JSON.parse(JSON.stringify(value));
 const fail = (message: string): never => { throw new Error(message); };
 
 export function text(value: any, name: string, max = 20000): string {
@@ -212,7 +211,7 @@ export function validate(value: CommentsState): CommentsState {
     commentIds.add(comment.commentId); usedThreads.add(comment.threadId);
   }
   if (usedThreads.size !== threadIds.size) fail('Every thread needs at least one comment');
-  return clone(value) as CommentsState;
+  return structuredClone(value);
 }
 function find(list: any[], field: string, id: string, label: string): any {
   return list.find(item => item[field] === id) || fail(`${label} not found`);

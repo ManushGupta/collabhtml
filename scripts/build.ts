@@ -17,24 +17,24 @@ fs.mkdirSync(dist, { recursive: true });
 const read = (file: string): string => fs.readFileSync(path.join(root, file), 'utf8');
 const escapeScript = (source: string): string => source.replace(/<\/script/gi, '<\\/script');
 
-function bundle(entry: string, outfile: string, options: { globalName?: string; platform?: 'browser' | 'node'; format?: 'iife' | 'esm' | 'cjs'; banner?: string } = {}): void {
+function bundle(entry: string, outfile: string, options: { platform?: 'browser' | 'node'; format?: 'iife' | 'esm' | 'cjs'; banner?: string } = {}): void {
   buildSync({
     entryPoints: [path.join(root, entry)],
     outfile: path.join(dist, outfile),
     bundle: true,
     platform: options.platform ?? 'browser',
     format: options.format ?? 'iife',
-    globalName: options.globalName,
     banner: options.banner ? { js: options.banner } : undefined,
     logLevel: 'silent'
   });
 }
 
-// Browser bundles expose the same globals as before for script-tag use.
-bundle('src/controller.ts', 'collabhtml.js', { globalName: 'CollabHTML' });
-bundle('ui/pane.ts', 'collabhtml-pane.js', { globalName: 'CollabHTMLPane' });
-bundle('src/export-html.ts', 'collabhtml-export.js', { globalName: 'CollabHTMLExporter' });
-bundle('src/full.ts', 'collabhtml-full.js', { globalName: 'CollabHTMLFull' });
+// Browser bundles expose window globals via the src/entries shims; library
+// modules stay pure ESM with no global side effects.
+bundle('src/entries/primitive.ts', 'collabhtml.js');
+bundle('src/entries/pane.ts', 'collabhtml-pane.js');
+bundle('src/entries/export-html.ts', 'collabhtml-export.js');
+bundle('src/entries/full.ts', 'collabhtml-full.js');
 // Node entry: the comment API as an ES module.
 bundle('src/comments.ts', 'comments.js', { platform: 'node', format: 'esm' });
 // Node entry as CommonJS for require() consumers (e.g. the .cjs example code).

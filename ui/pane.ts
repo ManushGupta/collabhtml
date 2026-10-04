@@ -171,7 +171,7 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
     if (existing && existing.personId !== localPersonId) return;
     const personName = nameInput.value.trim();
     if (!personName) throw new Error('Enter your name first.');
-    comments.setPerson({ personId: localPersonId as string, personName });
+    comments.setPerson({ personId: localPersonId!, personName });
   }
   // Runs a change through the primitive and reports the result. Returns true on success.
   async function perform(task: () => Promise<unknown>): Promise<boolean> {
@@ -204,7 +204,7 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
     toggle.textContent = `Comments · ${open} open`; count.textContent = String(view.length); list.replaceChildren();
     const ctx: ThreadCtx = {
       reactions, commentActions, threadActions, ui, setUi, avatarUrl, badges, onCopy: copy,
-      personId: () => currentPersonId() as string, isMine: personId => personId === currentPersonId(),
+      personId: () => currentPersonId()!, isMine: personId => personId === currentPersonId(),
       onReply: (threadId, text) => perform(() => comments.addComment({ threadId, text })),
       onStatus: (threadId, nextStatus) => perform(() => comments.setStatus(threadId, nextStatus)),
       onReact: (commentId, key) => perform(() => comments.toggleReaction(commentId, key)),
@@ -240,7 +240,7 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
     if (!selectedAnchor) return;
     const anchor = selectedAnchor;
     const done = await perform(() => comments.addThread({ anchor, text: commentInput.value.trim() }));
-    if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; (window.getSelection() as Selection).removeAllRanges(); }
+    if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; window.getSelection()!.removeAllRanges(); }
   });
   filter.addEventListener('change', render);
   // Popovers close on Escape, on a click elsewhere in the pane, and on a click outside it.
@@ -258,5 +258,3 @@ export function mount(comments: Controller, options: PaneOptions = {}): { elemen
   return { element: host, destroy };
 }
 
-// Browser global for script-tag use.
-(globalThis as any).CollabHTMLPane = { mount };
