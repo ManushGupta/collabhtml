@@ -20,7 +20,14 @@ This creates `report.collab.html` — a self-contained file with the comment lay
 npm install collabhtml
 ```
 
-Use the primitive in your own app, with or without the default UI. See [Use the primitive](#use-the-primitive) and [Use the default UI](#use-the-default-ui) below.
+```js
+import { empty, startThread, addComment, serialize } from 'collabhtml';
+
+let state = empty('report-42', '3');
+state = startThread(state, { threadId: 't1', anchor: [...], commentId: 'c1', personId: 'u-1', personName: 'Manu', timestamp: new Date().toISOString(), text: 'Check the figure.' });
+```
+
+Use the primitive in your own app, with or without the default UI. The sources are TypeScript (`src/`, `ui/`) with strict typechecking in CI. See [Use the primitive](#use-the-primitive) and [Use the default UI](#use-the-default-ui) below.
 
 ![CollabHTML demo: review an agent-written plan with comments, in a standalone file and in a hosted viewer](docs/collabhtml-demo.gif)
 
@@ -231,10 +238,12 @@ Each implementation and test file starts with its responsibility. A test enforce
 | `dist/collabhtml-pane.js` | The default UI | `collabhtml.js` first |
 | `dist/collabhtml-export.js` | `exportHTML()` | `collabhtml.js` first |
 | `dist/collabhtml-full.js` | All three | Nothing |
+| `dist/comments.js` / `dist/comments.cjs` | The Comment API for Node (ESM/CJS) | Nothing |
+| `dist/cli.cjs` | The `collabhtml` CLI | Nothing |
 
 ## Run the examples
 
-Requires Node.js 20 or newer for the build and example server only. No package install is needed.
+Requires Node.js 20 or newer. Run `npm install` first for the build and dev tooling (TypeScript, esbuild, tsx — all dev-only; the library itself has no dependencies).
 
 ```sh
 npm run build
