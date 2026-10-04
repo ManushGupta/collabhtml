@@ -118,7 +118,7 @@ comments.focus(threadId); comments.destroy();
 
 Events (`on(type, handler)` returns an unsubscriber): `update` (comments or placement changed), `selection` (user selected text — anchor ready for `addThread`), `focus` (`threadId`), `busy` (boolean), `destroy`.
 
-The primitive has no UI, storage, loading, networking, polling, export, or startup. `personId`/`personName` are data, not proof of identity: the host verifies them.
+The primitive has no UI, storage, loading, networking, polling, export, or startup. `personId`/`personName` are data, not proof of identity: the host verifies them. In a sandboxed iframe, `host.load()` and `host.apply()` cross a `postMessage` bridge instead of calling the backend directly — see `examples/viewer/bridge.js` for the worked pattern. For arbitrary documents with no stable element ID, pass the content root (`'body'` or `'main'`) rather than a selector.
 
 ## Use the default UI
 
@@ -141,7 +141,7 @@ Without a host person, the pane asks for a name (unverified per-session ID). **T
 ## HTML export
 
 ```js
-const html = CollabHTML.exportHTML({
+const html = CollabHTML.exportHTML({   // from dist/collabhtml-export.js (browser global)
   root: document.querySelector('#report'),
   state: comments.getState(),
   runtimeSource: libraryCode,
