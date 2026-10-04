@@ -2,6 +2,12 @@
 
 **A collaboration layer over HTML.**
 
+## Installation
+
+```bash
+npm install collabhtml
+```
+
 ![CollabHTML demo: review an agent-written plan with comments, in a standalone file and in a hosted viewer](docs/collabhtml-demo.gif)
 
 [Watch the sharper MP4](docs/collabhtml-demo.mp4)
