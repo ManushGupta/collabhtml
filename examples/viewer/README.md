@@ -6,7 +6,7 @@ Run `npm run build` and `npm run dev` at the project root. Open:
 
 <http://127.0.0.1:4173/examples/viewer/>
 
-Upload a static HTML file or click **Open sample HTML**. The viewer injects CollabHTML automatically. Add comments, then reopen the exact same file to restore them. **Refresh** loads comments added by other people. **Save HTML with comments** exports a copy with comments and the library embedded; the host bridge is removed from that copy.
+Upload a static HTML file or click **Open sample HTML**. The viewer injects CollabHTML automatically. Add comments, then reopen the exact same file to restore them. **Refresh** loads comments added by other people. See [the standalone guide](examples/standalone/README.md) for the save-a-copy flow.
 
 ## Boundaries
 
@@ -14,18 +14,16 @@ Upload a static HTML file or click **Open sample HTML**. The viewer injects Coll
 Parent viewer                  Opaque-origin sandbox iframe
 --------------                 ---------------------------
 Upload + document identity     Uploaded HTML
-Person (personId, personName)  CollabHTML primitive + default UI
+Person (personId, personName)  CollabHTML primitive + minimal custom UI
 Comment storage                Small load/apply bridge
 Validated request handler  <-> postMessage
 ```
 
-The pane is inside the iframe in this example. A future split UI can move the pane to the parent while keeping selections and highlights in the frame.
+The custom UI inside the iframe is built only on the primitive (`create`, `view`, events, methods) — no default pane. It proves a viewer needs just the primitive plus its own rendering. A future split UI can move the pane to the parent while keeping selections and highlights in the frame.
 
-The bridge loads state, calls `CollabHTML.create` with the `person` from the parent, and mounts the default UI with `CollabHTMLPane.mount`. `onChange(operation)` sends each operation to the parent, which returns the server's latest state. The primitive uses that state, so other people's comments appear after each change. The **Refresh** action calls `setState()`. The primitive never loads or saves storage.
+The bridge loads state, calls `CollabHTML.create` with the `person` from the parent, and draws thread cards from `view()`: quote (click to focus), comments, an inline reply box, and Resolve/Reopen buttons. `onChange(operation)` sends each operation to the parent, which returns the server's latest state. The primitive uses that state, so other people's comments appear after each change. The **Refresh** button calls `setState()`. The primitive never loads or saves storage.
 
-The viewer also chooses what the default UI offers: the reaction list, a **Toggle Action Item** thread action (it calls `updateMetadata`), and an "Action item" badge. The primitive owns the reaction and metadata behavior. A viewer with its own UI would inject only `dist/collabhtml.js`.
-
-This example injects `dist/collabhtml-full.js` (primitive, default UI, and export). Exported copies get `examples/standalone/bootstrap.js`, not the host bridge.
+This example injects `dist/collabhtml.js` (primitive only). HTML export lives in the standalone example, not here.
 
 The iframe has `allow-scripts allow-forms allow-downloads`, not `allow-same-origin`. It cannot read host cookies or storage. `allow-forms` lets the pane receive submit events; handlers prevent navigation, and CSP `form-action 'none'` blocks actual submissions. CSP also blocks network requests and external assets. Document scripts are removed by default; enable them only for trusted HTML. The stripping pass is not a general-purpose sanitizer; sandbox and CSP are the security boundaries.
 
@@ -34,7 +32,7 @@ Messages check frame/parent source, a per-load random channel, operation type, c
 ## Storage
 
 ```text
-Default UI → comments.addComment() → onChange(operation) → iframe bridge → parent → HTTP adapter → server → JSON files
+Custom UI → comments.addComment() → onChange(operation) → iframe bridge → parent → HTTP adapter → server → JSON files
 ```
 
 `storage.js` defines a two-method contract and adapters:

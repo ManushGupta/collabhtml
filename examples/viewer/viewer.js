@@ -43,8 +43,8 @@
     // Example only: a real service takes personId and personName from its login session.
     const person = { personId: `example-person:${encodeURIComponent(personName.toLowerCase())}`, personName };
     report('Preparing isolated document…');
-    const [runtime, bridge, exportBootstrap] = await Promise.all([
-      readResource('../../dist/collabhtml-full.js'), readResource('bridge.js'), readResource('../standalone/bootstrap.js')
+    const [runtime, bridge] = await Promise.all([
+      readResource('../../dist/collabhtml.js'), readResource('bridge.js')
     ]);
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source));
     const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
@@ -68,7 +68,7 @@
     const runtimeNode = parsed.createElement('script'); runtimeNode.dataset.collabhtmlRuntime = '';
     runtimeNode.textContent = runtime.replace(/<\/script/gi, '<\\/script');
     const bridgeNode = parsed.createElement('script'); bridgeNode.dataset.collabhtmlBootstrap = '';
-    bridgeNode.dataset.config = JSON.stringify({ channel, document: documentIdentity, person, exportBootstrap });
+    bridgeNode.dataset.config = JSON.stringify({ channel, document: documentIdentity, person });
     bridgeNode.textContent = bridge.replace(/<\/script/gi, '<\\/script');
     parsed.body.append(runtimeNode, bridgeNode);
     active = { channel, document: documentIdentity, name, store };

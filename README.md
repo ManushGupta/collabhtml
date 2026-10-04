@@ -213,7 +213,7 @@ ES module entries with types (for bundlers — the IIFE bundles above are only f
 ```sh
 npm install   # dev tooling (TypeScript, esbuild, tsx — the library has no dependencies)
 npm run build # bundles + demo.html + type declarations
-npm test      # build + unit tests (47 and counting; typecheck runs in CI)
+npm test      # build + unit tests (48 and counting; typecheck runs in CI)
 npm run dev   # example server at http://127.0.0.1:4173
 ```
 

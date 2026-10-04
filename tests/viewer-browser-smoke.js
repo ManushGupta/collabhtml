@@ -1,4 +1,6 @@
-// Responsibility: example upload, isolation, operation-based file storage, refresh, and export E2E.
+// Responsibility: example upload, isolation, operation-based file storage, refresh, and resolve E2E.
+// The iframe UI is custom-built on the primitive (no default pane): this test
+// drives thread cards, reply, resolve, and refresh through that UI.
 // Run: browser-control execute --file tests/viewer-browser-smoke.js
 await page.goto('http://127.0.0.1:4173/examples/viewer/index.html');
 await page.getByRole('button', { name: 'Open sample HTML' }).click();
@@ -14,7 +16,7 @@ async function upload() {
   }, fixture);
 }
 await upload();
-await artifact.getByRole('button', { name: 'Comments · 0 open' }).waitFor();
+await artifact.getByText('Comments · 0 open').waitFor();
 const isolation = await artifact.locator('body').evaluate(body => {
   const win = body.ownerDocument.defaultView;
   let canReadHost = false;
@@ -40,16 +42,11 @@ const stored = await api();
 const [first] = stored.comments;
 if (stored.comments.length !== 1 || first.personName !== 'Demo person' || !first.personId.startsWith('example-person:')) throw new Error('Comment was not persisted with person fields');
 
-// The viewer chose the reaction list and one thread action; both persist through the server.
-await artifact.getByLabel('Add reaction').click();
-await artifact.getByRole('button', { name: '🎉', exact: true }).click();
-await artifact.getByRole('button', { name: '🎉 1', exact: true }).waitFor();
-await artifact.getByLabel('More actions').click();
-await artifact.getByRole('menuitem', { name: 'Toggle Action Item', exact: true }).click();
-await artifact.getByText('Action item', { exact: true }).waitFor();
-const decorated = await api();
-if (decorated.comments[0].reactions?.['🎉']?.[0] !== first.personId) throw new Error('Reaction was not persisted with personId');
-if (decorated.threads[0].metadata?.actionItem !== true) throw new Error('Action item metadata was not persisted');
+// Resolve through the custom UI; the status persists through the server.
+await artifact.getByRole('button', { name: 'Resolve', exact: true }).click();
+await artifact.getByText('Comments · 0 open').waitFor();
+const resolved = await api();
+if (resolved.threads[0].status !== 'resolved') throw new Error('Resolve was not persisted');
 
 // Another person adds a follow-up directly through the API; Refresh shows it via setState.
 await page.evaluate(async ([identity, threadId]) => {
@@ -63,13 +60,4 @@ await artifact.getByText('Follow-up from someone else.').waitFor();
 await page.reload();
 await upload();
 await artifact.getByText('Follow-up from someone else.').waitFor();
-const exported = await artifact.locator('body').evaluate(body => {
-  const win = body.ownerDocument.defaultView;
-  return win.CollabHTML.exportHTML({ root: body, state: win.collabhtmlComments.getState(),
-    runtimeSource: body.ownerDocument.querySelector('script[data-collabhtml-runtime]').textContent,
-    bootstrapSource: JSON.parse(body.ownerDocument.querySelector('script[data-collabhtml-bootstrap]').dataset.config).exportBootstrap
-  });
-});
-if (exported.includes('collabhtml:request')) throw new Error('Export retained host bridge');
-if (!exported.includes('Server file storage works.') || !exported.includes('Follow-up from someone else.')) throw new Error('Export lost comments');
-return { passed: ['automatic injection', 'HTML upload', 'sandbox isolation', 'document scripts disabled', 'operation saved with person fields', 'follow-up from another person via API', 'viewer-supplied reactions persist', 'viewer thread action stores metadata + badge', 'Refresh uses setState', 'persistence across viewer reload', 'export without host bridge'] };
+return { passed: ['automatic injection', 'HTML upload', 'sandbox isolation', 'document scripts disabled', 'operation saved with person fields', 'custom UI on the primitive only', 'resolve via UI persists', 'follow-up from another person via API', 'Refresh uses setState', 'persistence across viewer reload'] };
