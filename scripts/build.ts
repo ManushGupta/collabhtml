@@ -39,6 +39,9 @@ bundle('src/entries/full.ts', 'collabhtml-full.js');
 bundle('src/comments.ts', 'comments.js', { platform: 'node', format: 'esm' });
 // Node entry as CommonJS for require() consumers (e.g. the .cjs example code).
 bundle('src/comments.ts', 'comments.cjs', { platform: 'node', format: 'cjs' });
+// Library entries for bundler consumers: the primitive and the default UI as ES modules.
+bundle('src/controller.ts', 'controller.js', { platform: 'node', format: 'esm' });
+bundle('ui/pane.ts', 'ui.js', { platform: 'node', format: 'esm' });
 // CLI: bundled CommonJS so npx needs no build step at install time.
 bundle('scripts/cli.ts', 'cli.cjs', { platform: 'node', format: 'cjs', banner: '#!/usr/bin/env node' });
 fs.chmodSync(path.join(dist, 'cli.cjs'), 0o755);

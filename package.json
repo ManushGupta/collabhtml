@@ -13,6 +13,16 @@
       "types": "./dist/types/src/comments.d.ts",
       "import": "./dist/comments.js",
       "default": "./dist/comments.js"
+    },
+    "./controller": {
+      "types": "./dist/types/src/controller.d.ts",
+      "import": "./dist/controller.js",
+      "default": "./dist/controller.js"
+    },
+    "./ui": {
+      "types": "./dist/types/ui/pane.d.ts",
+      "import": "./dist/ui.js",
+      "default": "./dist/ui.js"
     }
   },
   "bin": {
@@ -33,7 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.0",
     "tsx": "^4.0.0",
     "typescript": "^5.6.0"
   },

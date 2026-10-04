@@ -6,6 +6,9 @@ import { createId } from '../src/comments.js';
 import type { Anchor, Comment, TextQuoteSelector, Thread } from '../src/comments.js';
 import type { Controller } from '../src/controller.js';
 
+export { icon, renderThread };
+export type { PaneAction, ThreadCtx, UiState };
+
 export interface PaneOptions {
   open?: boolean;
   filter?: string;

@@ -238,8 +238,10 @@ Each implementation and test file starts with its responsibility. A test enforce
 | `dist/collabhtml-pane.js` | The default UI | `collabhtml.js` first |
 | `dist/collabhtml-export.js` | `exportHTML()` | `collabhtml.js` first |
 | `dist/collabhtml-full.js` | All three | Nothing |
-| `dist/comments.js` / `dist/comments.cjs` | The Comment API for Node (ESM/CJS) | Nothing |
+| `dist/comments.js` | The Comment API for Node (ESM/CJS) | Nothing |
 | `dist/cli.cjs` | The `collabhtml` CLI | Nothing |
+
+For bundler consumers, the package also exposes ES module entries (with types): `collabhtml` (Comment API), `collabhtml/controller` (`create()`), and `collabhtml/ui` (`mount()`, thread rendering). The `dist/*.js` IIFE bundles above are only for `<script>` tags and inlined single-file use.
 
 ## Run the examples
 
