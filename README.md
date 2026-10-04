@@ -4,9 +4,15 @@
 
 ## Two ways to use CollabHTML
 
-### 1. Standalone HTML (no install needed)
+### 1. CLI (no install needed)
 
-Open `dist/demo.html` directly in a browser. Enter your name, select text, add comments, and save an HTML copy with comments embedded. No server, no dependencies — the file is completely self-contained.
+Make any HTML file commentable:
+
+```bash
+npx collabhtml report.html
+```
+
+This creates `report.collab.html` — a self-contained file with the comment layer embedded. Open it in a browser, select text, and start commenting. No server, no dependencies.
 
 ### 2. As a library (for developers)
 

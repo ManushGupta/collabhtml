@@ -1,11 +1,14 @@
 {
   "name": "collabhtml",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publishConfig": {
     "access": "public"
   },
   "description": "CollabHTML: a collaboration layer over HTML. Comment threads with pluggable storage and optional HTML export.",
   "main": "src/comments.js",
+  "bin": {
+    "collabhtml": "scripts/cli.js"
+  },
   "files": [
     "src/",
     "ui/",
