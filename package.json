@@ -7,6 +7,11 @@
   },
   "description": "CollabHTML: a collaboration layer over HTML. Comment threads with pluggable storage and optional HTML export.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ManushGupta/collabhtml.git"
+  },
+  "homepage": "https://github.com/ManushGupta/collabhtml#readme",
   "main": "./dist/comments.js",
   "types": "./dist/types/src/comments.d.ts",
   "exports": {
