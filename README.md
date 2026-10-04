@@ -14,6 +14,18 @@ npx collabhtml report.html
 
 This creates `report.collab.html` — a self-contained file with the comment layer embedded. Open it in a browser, select text, and start commenting. No server, no dependencies.
 
+### Agent loop (humans review, agents resolve)
+
+The same files work for agents, in both directions:
+
+```bash
+collabhtml extract report.collab.html --format markdown   # reviews out (or --format json)
+collabhtml reply report.collab.html --thread t1 --name "Agent" --text "Fixed in revision 2."
+collabhtml resolve report.collab.html --thread t1 --name "Agent" --text "Verified and resolved."
+```
+
+`extract` renders threads, quotes, anchor offsets, and authorship as Markdown (or raw JSON) — readable by humans, parseable by agents. `reply` and `resolve` write back through the same operation protocol the UI uses, so the resolution and its paper trail land in the file attributed to the agent.
+
 ### 2. As a library (for developers)
 
 ```bash

@@ -8,7 +8,7 @@ const read = file => fs.readFileSync(path.join(import.meta.dirname, '..', file),
 const strip = source => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 test('the primitive has no UI, storage, export, network, or startup logic', () => {
-  const source = ['src/comments.ts', 'src/anchors.ts', 'src/controller.ts'].map(file => strip(read(file))).join('\n');
+  const source = ['src/comments.ts', 'src/anchors.ts', 'src/controller.ts', 'src/brief.ts'].map(file => strip(read(file))).join('\n');
   for (const token of ['CollabHTMLPane', 'CollabHTMLThreads', 'attachShadow', 'shadowRoot', 'innerHTML', 'adapter', 'fetch(', 'localStorage', 'sessionStorage',
     'exportHTML', 'download', 'beforeunload', 'runtimeSource', 'data-auto', 'location.', 'clipboard']) {
     assert.equal(source.includes(token), false, `Unexpected dependency in the primitive: ${token}`);
