@@ -39,6 +39,8 @@ bundle('src/entries/full.ts', 'collabhtml-full.js');
 bundle('src/comments.ts', 'comments.js', { platform: 'node', format: 'esm' });
 // Node entry as CommonJS for require() consumers (e.g. the .cjs example code).
 bundle('src/comments.ts', 'comments.cjs', { platform: 'node', format: 'cjs' });
+// Agent briefs for server-side rendering (pure, no DOM).
+bundle('src/brief.ts', 'brief.js', { platform: 'node', format: 'esm' });
 // Library entries for bundler consumers: the primitive and the default UI as ES modules.
 bundle('src/controller.ts', 'controller.js', { platform: 'node', format: 'esm' });
 bundle('ui/pane.ts', 'ui.js', { platform: 'node', format: 'esm' });

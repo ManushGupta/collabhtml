@@ -5,7 +5,7 @@
   const bootstrapSource = document.currentScript.textContent;
   const runtime = document.querySelector('script[data-collabhtml-runtime]');
   async function start() {
-    const root = document.querySelector(runtime.dataset.root || 'main');
+    const root = document.querySelector(runtime.dataset.root || 'main') || document.body;
     const embedded = document.querySelector('script[data-collabhtml-comments]');
     const state = embedded ? JSON.parse(embedded.textContent) : CollabHTML.comments.empty(runtime.dataset.document || 'standalone-document', runtime.dataset.revision || '1');
     const runtimeSource = runtime.src ? await fetch(runtime.src).then(response => {

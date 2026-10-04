@@ -23,6 +23,11 @@
       "types": "./dist/types/ui/pane.d.ts",
       "import": "./dist/ui.js",
       "default": "./dist/ui.js"
+    },
+    "./brief": {
+      "types": "./dist/types/src/brief.d.ts",
+      "import": "./dist/brief.js",
+      "default": "./dist/brief.js"
     }
   },
   "bin": {
