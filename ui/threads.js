@@ -1,9 +1,65 @@
 // Responsibility: DOM for one thread card — quote, comments, reactions, popover menus, edit/delete, inline reply.
 // Part of the default UI. Builds elements and reports user intent through callbacks; the pane owns styles and layout.
+/**
+ * Shared shape aliases for the browser scripts (each browser file is a
+ * global script, so these are declared once here and visible everywhere).
+ * `Comment` is intentionally aliased as `ChtComment`: a bare `Comment`
+ * would collide with the DOM lib's `Comment` interface.
+ * @typedef {import('../src/comments').Anchor} Anchor
+ * @typedef {import('../src/comments').Comment} ChtComment
+ * @typedef {import('../src/comments').CommentsState} CommentsState
+ * @typedef {import('../src/comments').Operation} Operation
+ * @typedef {import('../src/comments').Person} Person
+ * @typedef {import('../src/comments').TextQuoteSelector} TextQuoteSelector
+ * @typedef {import('../src/comments').Thread} Thread
+ */
+/**
+ * @typedef {object} UiState
+ * @property {string|null} editing
+ * @property {string|null} deleting
+ * @property {string|null} menu
+ * @property {string|null} picker
+ * @property {Record<string, string>} drafts
+ */
+/**
+ * @typedef {object} PaneAction
+ * @property {string} label
+ * @property {(...args: any[]) => unknown} run
+ */
+/**
+ * @typedef {object} ThreadCtx
+ * @property {string[]} reactions
+ * @property {PaneAction[]} commentActions
+ * @property {PaneAction[]} threadActions
+ * @property {UiState} ui
+ * @property {(patch: Partial<UiState>) => void} setUi
+ * @property {(personId: string) => string|undefined|null} avatarUrl
+ * @property {(thread: Thread) => string[]} badges
+ * @property {(text: string) => Promise<void>} onCopy
+ * @property {() => string} personId
+ * @property {(personId: string) => boolean} isMine
+ * @property {(threadId: string, text: string) => Promise<boolean>} onReply
+ * @property {(threadId: string, status: 'open'|'resolved') => Promise<boolean>} onStatus
+ * @property {(commentId: string, key: string) => Promise<boolean>} onReact
+ * @property {(commentId: string, text: string) => Promise<boolean>} onEdit
+ * @property {(commentId: string) => Promise<boolean>} onDelete
+ * @property {(threadId: string) => unknown} onLocate
+ * @property {(index: number, threadId: string) => unknown} onThreadAction
+ * @property {(index: number, commentId: string) => unknown} onCommentAction
+ */
+/**
+ * @typedef {[string, Record<string, string|number>]} IconPart
+ */
 (function () {
   'use strict';
   const SVG_NS = 'http://www.w3.org/2000/svg';
-  const dots = [5, 12, 19].map(cx => ['circle', { cx, cy: 12, r: 1.6, fill: 'currentColor', stroke: 'none' }]);
+  const dots = /** @type {IconPart[]} */ ([5, 12, 19].map(
+    /**
+     * @param {number} cx
+     * @returns {IconPart}
+     */
+    cx => ['circle', { cx, cy: 12, r: 1.6, fill: 'currentColor', stroke: 'none' }]));
+  /** @type {Record<string, IconPart[]>} */
   const ICONS = {
     more: dots,
     smile: [['circle', { cx: 12, cy: 12, r: 10 }], ['path', { d: 'M8 14s1.5 2 4 2 4-2 4-2' }], ['path', { d: 'M9 9h.01' }], ['path', { d: 'M15 9h.01' }]],
@@ -14,31 +70,60 @@
     trash: [['path', { d: 'M3 6h18' }], ['path', { d: 'M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6' }], ['path', { d: 'M10 11v6' }], ['path', { d: 'M14 11v6' }], ['path', { d: 'M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2' }]],
     close: [['path', { d: 'M18 6 6 18' }], ['path', { d: 'm6 6 12 12' }]]
   };
+  /**
+   * @param {string} name
+   * @param {number} [size]
+   * @returns {SVGSVGElement}
+   */
   function icon(name, size = 16) {
     const svg = document.createElementNS(SVG_NS, 'svg');
-    for (const [key, value] of Object.entries({ viewBox: '0 0 24 24', width: size, height: size, fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(key, value);
+    for (const [key, value] of Object.entries({ viewBox: '0 0 24 24', width: size, height: size, fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(key, String(value));
     for (const [tag, attributes] of ICONS[name]) {
       const part = document.createElementNS(SVG_NS, tag);
-      for (const [key, value] of Object.entries(attributes)) part.setAttribute(key, value);
+      for (const [key, value] of Object.entries(attributes)) part.setAttribute(key, String(value));
       svg.append(part);
     }
     return svg;
   }
+  /**
+   * Create an element of any kind. Returns `any` because callers use
+   * kind-specific properties (value, type, href) that no single DOM type has.
+   * @param {string} tag
+   * @param {string} [text]
+   * @param {string} [className]
+   * @returns {any}
+   */
   function node(tag, text, className) {
     const element = document.createElement(tag);
     if (text !== undefined) element.textContent = text;
     if (className) element.className = className;
     return element;
   }
+  /**
+   * @param {string} label
+   * @param {() => void} action
+   * @param {string} [className]
+   * @returns {any}
+   */
   function button(label, action, className) {
     const result = node('button', label, className);
     result.type = 'button'; result.addEventListener('click', action); return result;
   }
+  /**
+   * @param {string} name
+   * @param {string} label
+   * @param {() => void} action
+   * @returns {any}
+   */
   function iconButton(name, label, action) {
     const result = node('button', undefined, 'icon-btn');
     result.type = 'button'; result.setAttribute('aria-label', label); result.title = label;
     result.append(icon(name)); result.addEventListener('click', action); return result;
   }
+  /**
+   * @param {string} iso
+   * @returns {string}
+   */
   function relativeTime(iso) {
     const seconds = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 1000));
     if (seconds < 60) return 'just now';
@@ -47,18 +132,44 @@
     if (seconds < 30 * 86400) return `${Math.floor(seconds / 86400)}d ago`;
     return new Date(iso).toLocaleDateString();
   }
+  /**
+   * @param {unknown} value
+   * @returns {string|null}
+   */
   const safeImageUrl = value => (typeof value === 'string' && /^(https?:\/\/|data:image\/)/i.test(value) ? value : null);
+  /**
+   * @param {string} key
+   * @returns {string}
+   */
   const reactionLabel = key => (key === 'upvote' ? '⇧' : key);
 
   // An image when the host supplies a safe URL, otherwise a colored circle with the person's initial.
+  /**
+   * @param {ChtComment} comment
+   * @param {ThreadCtx} ctx
+   * @returns {any}
+   */
   function avatar(comment, ctx) {
     const url = safeImageUrl(ctx.avatarUrl(comment.personId));
     if (url) { const image = node('img', undefined, 'avatar'); image.src = url; image.alt = ''; image.referrerPolicy = 'no-referrer'; return image; }
-    let hue = 0; for (const character of comment.personId) hue = (hue * 31 + character.codePointAt(0)) % 360;
+    let hue = 0; for (const character of comment.personId) hue = (hue * 31 + (character.codePointAt(0) ?? 0)) % 360;
     const circle = node('span', (comment.personName.trim()[0] || '?').toUpperCase(), 'avatar');
     circle.style.background = `hsl(${hue} 50% 42%)`; return circle;
   }
   // Items are { label, icon?, danger?, run }. Groups are separated by a line.
+  /**
+   * @typedef {object} MenuEntry
+   * @property {string} label
+   * @property {string} [icon]
+   * @property {boolean} [danger]
+   * @property {() => void} run
+   */
+  /**
+   * @param {MenuEntry[][]} groups
+   * @param {string} side
+   * @param {string} role
+   * @returns {any}
+   */
   function popover(groups, side, role) {
     const box = node('div', undefined, `popover ${side}`); box.setAttribute('role', role);
     groups.filter(group => group.length).forEach((group, index) => {
@@ -73,8 +184,15 @@
     return box;
   }
 
-  // ctx: reactions, commentActions, threadActions, ui { editing, deleting, menu, picker, drafts }, setUi(patch),
+  // ctx: reactions, commentActions, threadActions, ui { editing, deleting, menu, picker, drafts },
   //      avatarUrl(id), badges(thread), personId(), isMine(id), and the on* callbacks supplied by the pane.
+  /**
+   * @param {ChtComment} comment
+   * @param {Thread} thread
+   * @param {boolean} isRoot
+   * @param {ThreadCtx} ctx
+   * @returns {any}
+   */
   function renderComment(comment, thread, isRoot, ctx) {
     const row = node('div', undefined, 'comment'); row.dataset.commentId = comment.commentId;
     const head = node('div', undefined, 'person');
@@ -116,7 +234,7 @@
       const actions = node('div', undefined, 'actions');
       const save = node('button', 'Save', 'btn primary'); save.type = 'submit';
       actions.append(save, button('Cancel', () => ctx.setUi({ editing: null }), 'btn')); form.append(input, actions);
-      form.addEventListener('submit', async event => {
+      form.addEventListener('submit', /** @param {SubmitEvent} event */ async event => {
         event.preventDefault();
         if (await ctx.onEdit(comment.commentId, input.value.trim())) ctx.setUi({ editing: null });
       });
@@ -155,13 +273,20 @@
     return row;
   }
 
+  /**
+   * @param {Thread} thread
+   * @param {ChtComment[]} threadComments
+   * @param {boolean} placed
+   * @param {ThreadCtx} ctx
+   * @returns {any}
+   */
   function renderThread(thread, threadComments, placed, ctx) {
     const card = node('article', undefined, thread.status === 'resolved' ? 'resolved' : ''); card.tabIndex = -1; card.dataset.threadId = thread.threadId;
     const badges = [...(thread.status === 'resolved' ? [['Resolved', 'badge resolved']] : []), ...(placed ? [] : [['Unplaced', 'badge']]), ...ctx.badges(thread).map(label => [label, 'badge'])];
     if (badges.length) { const row = node('div', undefined, 'badges'); for (const [label, className] of badges) row.append(node('span', label, className)); card.append(row); }
     // The quoted text is a button: it scrolls to that text in the page.
     const quote = node('button', undefined, 'quote');
-    quote.append(node('span', thread.anchor.find(selector => selector.type === 'TextQuoteSelector').exact, 'quote-text'));
+    quote.append(node('span', /** @type {TextQuoteSelector} */ (thread.anchor.find(selector => selector.type === 'TextQuoteSelector')).exact, 'quote-text'));
     quote.type = 'button'; quote.title = 'Show in page'; quote.addEventListener('click', () => ctx.onLocate(thread.threadId)); card.append(quote);
     if (thread.status === 'resolved' && thread.statusChange) card.append(node('p', `Resolved by ${thread.statusChange.personName}`, 'muted'));
     threadComments.forEach((comment, index) => card.append(renderComment(comment, thread, index === 0, ctx)));
@@ -171,7 +296,7 @@
     input.type = 'text'; input.placeholder = 'Reply…'; input.setAttribute('aria-label', 'Reply'); input.maxLength = 20000; input.autocomplete = 'off';
     input.value = ctx.ui.drafts[thread.threadId] || '';
     input.addEventListener('input', () => { ctx.ui.drafts[thread.threadId] = input.value; });
-    form.addEventListener('submit', async event => {
+    form.addEventListener('submit', /** @param {SubmitEvent} event */ async event => {
       event.preventDefault();
       const text = input.value.trim(); if (!text) return;
       delete ctx.ui.drafts[thread.threadId];
@@ -180,5 +305,5 @@
     form.append(input); card.append(form);
     return card;
   }
-  globalThis.CollabHTMLThreads = { renderThread, icon };
+  (/** @type {any} */ (globalThis)).CollabHTMLThreads = { renderThread, icon };
 })();

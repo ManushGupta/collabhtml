@@ -1,7 +1,20 @@
 // Responsibility: the default comments UI — pane shell, styles, header, compose form, filter, and list layout.
 // Built only on the primitive's public API: methods, view(), and events. Thread cards come from threads.js.
+/**
+ * @typedef {object} PaneOptions
+ * @property {boolean} [open]
+ * @property {string} [filter]
+ * @property {PaneAction[]} [actions]
+ * @property {string[]} [reactions]
+ * @property {PaneAction[]} [threadActions]
+ * @property {PaneAction[]} [commentActions]
+ * @property {(personId: string) => any} [personAvatar]
+ * @property {(thread: Thread) => any} [threadBadges]
+ */
 (function () {
   'use strict';
+  const CommentsLib = /** @type {{comments: import('../src/comments')}} */ ((/** @type {any} */ (globalThis)).CollabHTML);
+  const ThreadsUI = /** @type {{icon: (name: string, size?: number) => SVGSVGElement, renderThread: (thread: Thread, comments: ChtComment[], placed: boolean, ctx: ThreadCtx) => any}} */ ((/** @type {any} */ (globalThis)).CollabHTMLThreads);
   const styles = `
     :host { all: initial; font: 14px/1.5 system-ui,-apple-system,sans-serif; color:#1f2937; --accent:#6d3fc2; --accent-soft:#f3edfc; --line:#e5e7eb; --muted:#6b7280; }
     * { box-sizing:border-box; } button,input,textarea,select { font:inherit; color:inherit; } button { cursor:pointer; }
@@ -58,23 +71,51 @@
     .empty { padding:28px 0; text-align:center; }
     @media(max-width:600px) { .panel { top:auto; bottom:0; left:0; right:0; width:100%; max-width:none; height:70vh; border-radius:16px 16px 0 0; } }
   `;
+  /**
+   * Create an element of any kind. Returns `any` because callers use
+   * kind-specific properties (value, type, hidden) that no single DOM type has.
+   * @param {string} tag
+   * @param {string} [text]
+   * @param {string} [className]
+   * @returns {any}
+   */
   function node(tag, text, className) {
     const element = document.createElement(tag);
     if (text !== undefined) element.textContent = text;
     if (className) element.className = className;
     return element;
   }
+  /**
+   * @param {string} label
+   * @param {() => void} action
+   * @param {string} [className]
+   * @returns {any}
+   */
   function button(label, action, className) {
     const result = node('button', label, className);
     result.type = 'button'; result.addEventListener('click', action); return result;
   }
   const FILTERS = ['all', 'open', 'resolved', 'mine'];
-  const quoteOf = anchor => anchor.find(selector => selector.type === 'TextQuoteSelector').exact;
+  /**
+   * @param {Anchor} anchor
+   * @returns {string}
+   */
+  const quoteOf = anchor => /** @type {TextQuoteSelector} */ (anchor.find(selector => selector.type === 'TextQuoteSelector')).exact;
+  /**
+   * @param {any} value
+   * @param {string} name
+   * @returns {PaneAction[]}
+   */
   function actionList(value, name) {
     const list = value === undefined ? [] : value;
     if (!Array.isArray(list) || list.some(action => typeof action?.label !== 'string' || !action.label.trim() || typeof action.run !== 'function')) throw new Error(`Invalid ${name}`);
     return list;
   }
+  /**
+   * @param {any} value
+   * @param {string} name
+   * @returns {((...args: any[]) => unknown)|undefined}
+   */
   function optionalFunction(value, name) {
     if (value !== undefined && typeof value !== 'function') throw new Error(`${name} must be a function`);
     return value;
@@ -82,6 +123,11 @@
 
   // Options (all optional):
   //   open, filter, actions, reactions, threadActions, commentActions, personAvatar, threadBadges
+  /**
+   * @param {Controller} comments
+   * @param {PaneOptions} [options]
+   * @returns {{element: any, destroy: () => void}}
+   */
   function mount(comments, options = {}) {
     if (!comments || typeof comments.view !== 'function' || typeof comments.on !== 'function') throw new Error('mount(comments): pass the controller returned by create()');
     const actions = actionList(options.actions, 'actions');
@@ -95,14 +141,17 @@
 
     // Without a host-supplied person, ask for a name and use an unverified ID for this page session only.
     const hostPerson = comments.getPerson();
-    const localPersonId = hostPerson ? null : `local-${CollabHTML.comments.createId()}`;
+    const localPersonId = hostPerson ? null : `local-${CommentsLib.comments.createId()}`;
     const currentPersonId = () => comments.getPerson()?.personId ?? localPersonId;
-    let busy = false; let selectedAnchor = null; let destroyed = false;
+    let busy = false; let destroyed = false;
+    /** @type {Anchor|null} */
+    let selectedAnchor = null;
     const ui = { editing: null, deleting: null, menu: null, picker: null, drafts: {} };
 
     const host = node('div'); host.dataset.collabhtmlUi = ''; host.style.cssText = 'position:relative;z-index:2147483647';
-    const shadow = host.attachShadow({ mode: 'open' }); shadow.append(node('style', styles));
+    const shadow = /** @type {ShadowRoot} */ (host.attachShadow({ mode: 'open' })); shadow.append(node('style', styles));
     const panel = node('section', undefined, 'panel'); panel.setAttribute('aria-label', 'Comments'); panel.hidden = options.open === false;
+    /** @param {boolean} open */
     const setOpen = open => { panel.hidden = !open; toggle.setAttribute('aria-expanded', String(open)); };
     const toggle = button('Comments', () => { setOpen(panel.hidden); if (!panel.hidden && !hostPerson) nameInput.focus(); }, 'toggle');
     toggle.setAttribute('aria-expanded', String(!panel.hidden));
@@ -116,18 +165,28 @@
     }
     filter.value = startFilter;
     const close = node('button', undefined, 'icon-btn'); close.type = 'button'; close.title = 'Close comments'; close.setAttribute('aria-label', 'Close comments');
-    close.append(CollabHTMLThreads.icon('close')); close.addEventListener('click', () => { setOpen(false); toggle.focus(); });
+    close.append(ThreadsUI.icon('close')); close.addEventListener('click', () => { setOpen(false); toggle.focus(); });
     top.append(node('h2', 'Comments'), count, node('span', undefined, 'spacer'), filterLabel, filter, close); header.append(top);
     const status = node('p', 'Select text to add a comment.', 'muted'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+    /**
+     * @param {string} message
+     * @param {boolean} [error]
+     * @returns {void}
+     */
     const report = (message, error = false) => { status.textContent = message; status.className = error ? 'error' : 'muted'; };
+    /**
+     * @param {PaneAction} action
+     * @param {any} subject
+     * @returns {Promise<void>}
+     */
     async function runAction(action, subject) {
       if (!subject) return;
-      try { await action.run(subject, comments); } catch (error) { report(error.message || 'Action failed.', true); }
+      try { await action.run(subject, comments); } catch (error) { report(/** @type {any} */ (error).message || 'Action failed.', true); }
     }
     if (actions.length) {
       const tools = node('div', undefined, 'tools');
       actions.forEach(action => tools.append(button(action.label, async () => {
-        try { await action.run(comments); } catch (error) { report(error.message || 'Action failed.', true); }
+        try { await action.run(comments); } catch (error) { report(/** @type {any} */ (error).message || 'Action failed.', true); }
       }, 'btn')));
       header.append(tools);
     }
@@ -147,35 +206,61 @@
     const list = node('div'); body.append(nameField, compose, list);
     const footer = node('footer'); footer.append(status); panel.append(header, body, footer); shadow.append(toggle, panel); document.body.append(host);
 
+    /**
+     * @param {boolean} value
+     * @returns {void}
+     */
     const setBusy = value => { busy = value; shadow.querySelectorAll('button').forEach(element => { element.disabled = value; }); };
     function ensurePerson() {
       const existing = comments.getPerson();
       if (existing && existing.personId !== localPersonId) return;
       const personName = nameInput.value.trim();
       if (!personName) throw new Error('Enter your name first.');
-      comments.setPerson({ personId: localPersonId, personName });
+      comments.setPerson({ personId: /** @type {string} */ (localPersonId), personName });
     }
     // Runs a change through the primitive and reports the result. Returns true on success.
+    /**
+     * @param {() => Promise<unknown>} task
+     * @returns {Promise<boolean>}
+     */
     async function perform(task) {
       try { ensurePerson(); report('Updating comments…'); await task(); report('Comments updated.'); return true; }
-      catch (error) { report(error.message || 'Change failed. Existing comments are unchanged.', true); return false; }
+      catch (error) { report(/** @type {any} */ (error).message || 'Change failed. Existing comments are unchanged.', true); return false; }
     }
+    /**
+     * @param {string} text
+     * @returns {Promise<void>}
+     */
     async function copy(text) {
       try { await navigator.clipboard.writeText(text); report('Copied.'); }
       catch { report('Could not copy. Select the text and copy it manually.', true); }
     }
+    /**
+     * @param {string} personId
+     * @returns {string|undefined|null}
+     */
     const avatarUrl = personId => { try { return options.personAvatar?.(personId); } catch { return null; } };
+    /**
+     * @param {Thread} thread
+     * @returns {string[]}
+     */
     const badges = thread => {
       try {
         const list = options.threadBadges?.(thread);
         return Array.isArray(list) ? list.filter(item => typeof item === 'string' && item.trim() && item.length <= 40).slice(0, 5) : [];
       } catch { return []; }
     };
+    /**
+     * @param {Thread} thread
+     * @param {ChtComment[]} threadComments
+     * @returns {boolean}
+     */
     const visible = (thread, threadComments) => {
       if (filter.value === 'open' || filter.value === 'resolved') return thread.status === filter.value;
       if (filter.value === 'mine') return threadComments.some(comment => comment.personId === currentPersonId());
       return true;
     };
+    /** @param {Partial<UiState>} patch */
     function setUi(patch) { Object.assign(ui, patch); render(); }
     const closePopovers = () => { if (ui.menu || ui.picker) setUi({ menu: null, picker: null }); };
 
@@ -184,9 +269,9 @@
       const view = comments.view();
       const open = view.filter(item => item.thread.status === 'open').length;
       toggle.textContent = `Comments · ${open} open`; count.textContent = String(view.length); list.replaceChildren();
-      const ctx = {
+      const ctx = /** @type {ThreadCtx} */ ({
         reactions, commentActions, threadActions, ui, setUi, avatarUrl, badges, onCopy: copy,
-        personId: currentPersonId, isMine: personId => personId === currentPersonId(),
+        personId: () => /** @type {string} */ (currentPersonId()), isMine: personId => personId === currentPersonId(),
         onReply: (threadId, text) => perform(() => comments.addComment({ threadId, text })),
         onStatus: (threadId, nextStatus) => perform(() => comments.setStatus(threadId, nextStatus)),
         onReact: (commentId, key) => perform(() => comments.toggleReaction(commentId, key)),
@@ -195,19 +280,27 @@
         onLocate: threadId => comments.focus(threadId),
         onThreadAction: (index, threadId) => runAction(threadActions[index], view.find(item => item.thread.threadId === threadId)?.thread),
         onCommentAction: (index, commentId) => runAction(commentActions[index], view.flatMap(item => item.comments).find(comment => comment.commentId === commentId))
-      };
+      });
       let shown = 0;
       for (const item of view) {
         if (!visible(item.thread, item.comments)) continue;
-        list.append(CollabHTMLThreads.renderThread(item.thread, item.comments, item.placed, ctx)); shown += 1;
+        list.append(ThreadsUI.renderThread(item.thread, item.comments, item.placed, ctx)); shown += 1;
       }
       if (!shown) list.append(node('p', view.length ? 'No comments match this filter.' : 'No comments yet. Select text on the page to start.', 'muted empty'));
       setBusy(busy);
     }
+    /**
+     * @param {Anchor} anchor
+     * @returns {void}
+     */
     function showSelection(anchor) {
       selectedAnchor = anchor; quote.textContent = quoteOf(anchor); compose.hidden = false; setOpen(true);
     }
     // Open the pane, make sure the thread is visible, and move keyboard focus to its card.
+    /**
+     * @param {string} threadId
+     * @returns {void}
+     */
     function reveal(threadId) {
       setOpen(true);
       const find = () => list.querySelector(`[data-thread-id="${CSS.escape(threadId)}"]`);
@@ -217,16 +310,18 @@
       const item = comments.view().find(entry => entry.thread.threadId === threadId);
       if (item && !item.placed) report('The selected text no longer matches this document.', true);
     }
-    compose.addEventListener('submit', async event => {
+    compose.addEventListener('submit', /** @param {SubmitEvent} event */ async event => {
       event.preventDefault();
       if (!selectedAnchor) return;
-      const done = await perform(() => comments.addThread({ anchor: selectedAnchor, text: commentInput.value.trim() }));
-      if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; window.getSelection().removeAllRanges(); }
+      const anchor = selectedAnchor;
+      const done = await perform(() => comments.addThread({ anchor, text: commentInput.value.trim() }));
+      if (done) { selectedAnchor = null; compose.hidden = true; commentInput.value = ''; /** @type {Selection} */ (window.getSelection()).removeAllRanges(); }
     });
     filter.addEventListener('change', render);
     // Popovers close on Escape, on a click elsewhere in the pane, and on a click outside it.
-    shadow.addEventListener('keydown', event => { if (event.key === 'Escape') closePopovers(); });
-    shadow.addEventListener('click', event => { if (!event.target.closest?.('.anchor')) closePopovers(); });
+    shadow.addEventListener('keydown', event => { if (/** @type {KeyboardEvent} */ (event).key === 'Escape') closePopovers(); });
+    shadow.addEventListener('click', event => { if (!/** @type {any} */ (event.target).closest?.('.anchor')) closePopovers(); });
+    /** @param {MouseEvent} event */
     const onDocumentClick = event => { if (!event.composedPath().includes(host)) closePopovers(); };
     document.addEventListener('click', onDocumentClick);
 
@@ -238,5 +333,5 @@
     render();
     return { element: host, destroy };
   }
-  globalThis.CollabHTMLPane = { mount };
+  (/** @type {any} */ (globalThis)).CollabHTMLPane = { mount };
 })();

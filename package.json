@@ -13,16 +13,21 @@
     "src/",
     "ui/",
     "dist/",
-    "examples/",
     "scripts/",
-    "tests/",
+    "examples/standalone/bootstrap.js",
     "README.md",
-    "package.json"
+    "LICENSE"
   ],
   "scripts": {
     "build": "node scripts/build.js",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.js",
     "dev": "node examples/viewer/server.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
   },
   "engines": {
     "node": ">=20"

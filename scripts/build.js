@@ -7,13 +7,25 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
+/**
+ * @param {string} file
+ * @returns {string}
+ */
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+/**
+ * @param {string[]} files
+ * @returns {string}
+ */
 const bundle = files => files.map(read).join('\n');
 const primitive = bundle(['src/comments.js', 'src/anchors.js', 'src/controller.js']);
 const pane = bundle(['ui/threads.js', 'ui/pane.js']);
 const exporter = read('src/export-html.js');
 const full = [primitive, pane, exporter].join('\n');
 const bootstrap = read('examples/standalone/bootstrap.js');
+/**
+ * @param {string} source
+ * @returns {string}
+ */
 const escapeScript = source => source.replace(/<\/script/gi, '<\\/script');
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(root, 'dist/collabhtml.js'), primitive);

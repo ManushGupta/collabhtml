@@ -29,8 +29,11 @@ test('the default UI calls only the primitive public API', () => {
     assert.equal(source.includes(token), false, `The UI must not use ${token}`);
   }
   // The only part of the public namespace the UI may use is the ID helper.
-  const namespaceUse = new Set([...source.matchAll(/CollabHTML\.(\w+(?:\.\w+)?)/g)].map(match => match[1]));
+  // (CommentsLib and ThreadsUI are local aliases for the CollabHTML globals.)
+  const namespaceUse = new Set([...source.matchAll(/(?:CollabHTML|CommentsLib)\.(\w+(?:\.\w+)?)/g)].map(match => match[1]));
   assert.deepEqual([...namespaceUse], ['comments.createId']);
+  const threadsUse = new Set([...source.matchAll(/ThreadsUI\.(\w+)/g)].map(match => match[1]));
+  assert.deepEqual([...threadsUse].sort(), ['icon', 'renderThread']);
 });
 
 test('the primitive and the UI do not depend on HTML export, and export does not depend on the UI', () => {

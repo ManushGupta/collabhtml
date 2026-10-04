@@ -16,7 +16,7 @@ Usage:
   collabhtml --version
 
 Options:
-  --out   Output file path (default: <input>.review.html)
+  --out   Output file path (default: <input>.collab.html)
   --help  Show this help message
   --version  Show version
 
@@ -36,6 +36,11 @@ function getVersion() {
   }
 }
 
+/**
+ * @param {string} inputPath
+ * @param {string} outputPath
+ * @returns {void}
+ */
 function wrap(inputPath, outputPath) {
   if (!fs.existsSync(inputPath)) {
     console.error(`Error: File not found: ${inputPath}`);
@@ -46,6 +51,10 @@ function wrap(inputPath, outputPath) {
 
   // Build the runtime and bootstrap code
   const root = path.resolve(__dirname, '..');
+  /**
+   * @param {string} file
+   * @returns {string}
+   */
   const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
   const primitive = ['src/comments.js', 'src/anchors.js', 'src/controller.js'].map(read).join('\n');
@@ -54,6 +63,10 @@ function wrap(inputPath, outputPath) {
   const full = [primitive, pane, exporter].join('\n');
   const bootstrap = read('examples/standalone/bootstrap.js');
 
+  /**
+   * @param {string} source
+   * @returns {string}
+   */
   const escapeScript = source => source.replace(/<\/script/gi, '<\\/script');
 
   // Replace placeholders or inject before </body>
